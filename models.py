@@ -1,5 +1,5 @@
 from os import getenv
-from typing import List, Tuple, Any
+from typing import List, Tuple, Any, Dict
 
 from dotenv import find_dotenv, load_dotenv
 from pydantic import BaseModel
@@ -24,8 +24,11 @@ class GameData(BaseModel):
     thread:      str = ''
     last_number: int = 1
     paste:       str = ''
+
     players:     List[Player] = []
     roll_bases:  List[RollBase] = []
+
+    cookies: Dict[str, str] = dict()
 
 
 class Usercode(BaseModel):

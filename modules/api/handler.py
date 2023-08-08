@@ -11,8 +11,13 @@ class DvachAPIHandler:
     def __init__(self, usercode: str, usercode_auth: str, passcode_auth: str):
 
         self.usercode = usercode
-        self.usercode_auth = usercode_auth
-        self.passcode_auth = passcode_auth
+        self.cookies = {
+            'usercode_auth': usercode_auth,
+            'passcode_auth': passcode_auth,
+        }
+
+    def update_cookies(self, cookies: Dict[str, str]) -> None:
+        self.cookies.update(cookies)
 
     def get_thread(self, board: str, thread_num: str | int) -> DvachThread | None:
 
@@ -54,10 +59,7 @@ class DvachAPIHandler:
         headers.update({'Content-Type': data.content_type})
 
         if not cookies:
-            cookies = {}
-        cookies.update({
-            'usercode_auth': self.usercode_auth,
-            'passcode_auth': self.passcode_auth,
-        })
+            cookies = dict()
+        cookies.update(self.cookies)
 
         return post(url, data=data, headers=headers, cookies=cookies)

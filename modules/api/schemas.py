@@ -7,20 +7,27 @@ from .models import ImageFile
 
 
 class DvachPostingSchemaIn(BaseModel):
-    task:         str = 'post'
-    board:        str
-    thread:       str | int = ''
-    usercode:     str = ''
-    code:         str = ''
-    captcha_type: str = '2chcaptcha'
-    email:        str = ''
-    submit:       str = 'Ответ'
-    name:         str = ''
-    comment:      str = ''
+    board:   str
+    thread:  str | int = ''
+    comment: str = ''
+
+    op_mark: int = 1
+    subject: str = ''
+    name:    str = ''
+    email:   str = ''
+    tags:    str = ''
+
     oekaki_image:    str = ''
     oekaki_metadata: str = ''
     makaka_id:       str = ''
     makaka_answer:   str = ''
+
+    task:         str = 'post'
+    submit:       str = 'Ответ'
+    captcha_type: str = '2chcaptcha'
+    usercode:     str = ''
+    code:         str = ''
+
     files: List[ImageFile] = []
 
     def to_dict(self) -> Dict:

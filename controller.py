@@ -367,6 +367,13 @@ class Controller:
 
         self.set_thread_num(r.json().get('thread'))
 
+        cookies, d = r.cookies, dict()
+        for cookie in cookies:
+            if cookie.name[:2] == 'op':
+                d.update({cookie.name: cookie.value})  # noqa
+        self.api.update_cookies(d)
+        self.model.cookies.update(d)
+
     def posting_announcement(self, thread_num: str | int) -> None:
 
         new_thread = f"https://2ch.hk/{self.model.board}/" \
