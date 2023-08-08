@@ -509,14 +509,10 @@ class Controller:
                     self.model.board = input()
 
                 self.posting_thread()
-                self.loop()
 
             except ConnectionError:
                 print("Connection error\n"
                       "Check your internet connection and try again")
-
-                self.sleep()
-                continue
 
             except Exception as e:
 
@@ -529,6 +525,5 @@ class Controller:
                 print(e)
                 print_tb(e.__traceback__)
 
+            finally:
                 self.sleep()
-
-                continue
