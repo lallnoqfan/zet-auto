@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "zet-auto"
+version = "0.8.0"
+description = ""
+authors = ["lallnoqfan <lallnoqfan@gmail.com>"]
+readme = "README.md"
+packages = [{include = "zet_auto"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+python-dotenv = "^1.0.0"
+pydantic = "^2.1.1"
+requests = "^2.31.0"
+requests-toolbelt = "^1.0.0"
+pillow = "^10.0.0"
+webcolors = "^1.13"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

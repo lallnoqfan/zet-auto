@@ -1,0 +1,13 @@
+## Git
+.git
+
+## Environment
+venv
+.venv
+.idea
+
+## Secret
+passcode_secret.env
+
+## Data files
+modules/saves
