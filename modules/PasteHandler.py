@@ -37,7 +37,8 @@ class PasteHandler:
         self._add_reply(num, '%%роллбаза добавлена%%')
 
     def creation(self, num: int, tile: str, player_name: str) -> None:
-        self._add_reply(num, f"**\"{player_name}\" создаётся на {tile.upper()}**")
+        self._add_reply(num, f"**\"{player_name}\" "
+                             f"создаётся на {tile.upper()}**")
 
     def creation_attack(self, num: int, tile: str,
                         player_name: str, attacked_name: str) -> None:

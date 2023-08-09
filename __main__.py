@@ -17,20 +17,25 @@ class App:
         read_all_parser.set_defaults(func=self.read_all)
 
         create_parser = subparser.add_parser('new')
-        create_parser.add_argument('name', type=str, help='New save name')
+        create_parser.add_argument('name', type=str,
+                                   help='New save name')
         create_parser.set_defaults(func=self.create)
 
         delete_parser = subparser.add_parser('del')
-        delete_parser.add_argument('name', type=str, help='Name of save to delete')
+        delete_parser.add_argument('name', type=str,
+                                   help='Name of save to delete')
         delete_parser.set_defaults(func=self.delete)
 
         update_parser = subparser.add_parser('set')
-        update_parser.add_argument('name', type=str, help='Name of save to update')
-        update_parser.add_argument('-t', dest='thread', type=str, help='New thread url')
+        update_parser.add_argument('name', type=str,
+                                   help='Name of save to update')
+        update_parser.add_argument('-t', dest='thread', type=str,
+                                   help='New thread url')
         update_parser.set_defaults(func=self.update)
 
         auto_parser = subparser.add_parser('run')
-        auto_parser.add_argument('name', type=str, help='Name of save to run')
+        auto_parser.add_argument('name', type=str,
+                                 help='Name of save to run')
         auto_parser.set_defaults(func=self.run)
 
         args = parser.parse_args()

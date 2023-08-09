@@ -10,7 +10,8 @@ from webcolors import hex_to_rgb
 
 from errors import ThreadNotSetException
 from models import Player, RollBase, Usercode
-from modules import CommentParser, PasteHandler, ResourcesHandler, SavesHandler
+from modules import CommentParser, PasteHandler, PremodHandler, \
+    ResourcesHandler, SavesHandler
 from modules.api import DvachAPIHandler, DvachThread, Post, \
     DvachPostingSchemaIn, ImageFile
 
@@ -229,6 +230,7 @@ class Controller:
 
         name, color = data
 
+        # name length check
         if len(name) > 50:  # hardcode
             self.paste_handler.too_long_name(post.num)
             return True
@@ -246,7 +248,7 @@ class Controller:
             self.paste_handler.same_name(post.num)
             return True
 
-        # same for color
+        # or with same color
         if self.check_player(color=color):
             self.paste_handler.same_color(post.num)
             return True
@@ -390,8 +392,9 @@ class Controller:
     def fetch_thread(self) -> DvachThread | None:
         return self.api.get_thread(self.model.board, self.model.thread)
 
-    @staticmethod
-    def check_drowning(thread: DvachThread) -> bool:
+    def check_drowning(self) -> bool:
+
+        thread = self.fetch_thread()
 
         for post in thread.posts[::-1]:
 
@@ -457,7 +460,6 @@ class Controller:
         self.parse_thread(thread)
 
         if self.paste_handler.get_paste():
-
             print(f"{f'  paste  ':*^60}")
             print(self.paste_handler.get_paste())
             print('*' * 60)
@@ -493,8 +495,6 @@ class Controller:
                 self.model.paste = self.paste_handler.get_paste()
                 self.saves_handler.dump(self.name, self.model)
 
-                self.sleep()
-
             except ThreadNotSetException as e:
                 print(e.message)
 
@@ -518,8 +518,8 @@ class Controller:
 
                 print('\n' + '=' * 50)
                 print(f"!!!{' UNHANDLED EXCEPTION OCCURED ': ^44}!!!")
-                print(f"!!!{' V KLOZET NASRALI ': ^44}!!!")
-                print(f"!!!{' POVTORYAU V KLOZET NASRALI ': ^44}!!!")
+                print(f"!!!{' KLOZET ZABILSYA ': ^44}!!!")
+                print(f"!!!{' POVTORYAU KLOZET ZABILSYA ': ^44}!!!")
                 print('=' * 50 + '\n')
 
                 print(e)
