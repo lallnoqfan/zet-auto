@@ -11,3 +11,6 @@ venv
 modules/saves
 modules/resources/black_list.txt
 modules/resources/white_list.txt
+
+## Logging
+*.log

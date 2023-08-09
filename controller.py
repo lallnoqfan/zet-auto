@@ -1,4 +1,5 @@
 from datetime import datetime
+from logging import basicConfig, error as log_error, ERROR
 from time import sleep, perf_counter
 from traceback import print_tb
 from typing import List, Optional
@@ -500,6 +501,13 @@ class Controller:
         print(f"{' CTRL+C to stop loop ':*^50}")
         print(f"{'':*^50}\n")
 
+        basicConfig(level=ERROR,
+                    filename=str(__file__).replace(
+                        'controller.py', 'errors.log'
+                    ),
+                    filemode="a",
+                    format="%(asctime)s %(levelname)s %(message)s")
+
         while True:
 
             try:
@@ -539,6 +547,8 @@ class Controller:
 
                 print(e)
                 print_tb(e.__traceback__)
+                print()
+                log_error(e, exc_info=True)
 
             finally:
                 self.sleep()
