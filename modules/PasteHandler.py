@@ -79,8 +79,8 @@ class PasteHandler:
         self.creation_denied(num, "имя в черном списке")
 
     def invalid_roll_base(self, num: int, roll_base_num: int) -> None:
-        self._add_reply(num, f'%%пост >>{roll_base_num} не является роллбазой '
-                             f'(см. выше почему)%%')
+        self._add_reply(num, f'%%пост >>{roll_base_num} '
+                             f'не является роллбазой%%')
 
     def already_owns(self, num: int, tile: str) -> None:
         self._add_reply(num, f"%%{tile.upper()} уже под вашим контролем%%")
@@ -95,3 +95,10 @@ class PasteHandler:
 
     def invalid_tile(self, num: int, tile: str) -> None:
         self._add_reply(num, f'%%клетка {tile.upper()} не существует%%')
+
+    def expansion_without_tiles(self, num: int) -> None:
+        self._add_reply(num, '%%нельзя роллить на расширение, '
+                             'если у вас нет клеток%%')
+
+    def expansion_no_free_tiles(self, num: int) -> None:
+        self._add_reply(num, '%%нет доступных для расширения клеток%%')

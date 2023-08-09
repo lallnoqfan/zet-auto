@@ -29,6 +29,18 @@ class ResourcesHandler:
     def tile_exists(self, tile_id: str) -> bool:
         return tile_id in self.tiles_data
 
+    def calc_distance(self, first_tile_id: str,  second_tile_id: str) -> float:
+
+        first_tile = self.get_tile(first_tile_id)
+        second_tile = self.get_tile(second_tile_id)
+
+        x1, y1 = first_tile.get('x'), first_tile.get('y')
+        x2, y2 = second_tile.get('x'), second_tile.get('y')
+
+        distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
+
+        return distance
+
     def draw_map(self, players: List[Player]) -> Image.Image:
 
         map_image = self.map.copy()
@@ -62,7 +74,8 @@ class ResourcesHandler:
             text=name,
             fill=(0, 0, 0),
             font=ImageFont.truetype(
-                f"{self.path}CodenameCoderFree4F-Bold.ttf", 40, encoding='unic'),
+                f"{self.path}CodenameCoderFree4F-Bold.ttf", 40,
+                encoding='unic'),
         )
 
         return img

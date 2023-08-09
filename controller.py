@@ -2,7 +2,7 @@ from datetime import datetime
 from logging import basicConfig, error as log_error, ERROR
 from time import sleep, perf_counter
 from traceback import print_tb
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 from PIL import Image
 from requests import Response
@@ -116,11 +116,17 @@ class Controller:
 
         return roll_base
 
+    def is_tile_free(self, tile_id: str) -> bool:
+        for player in self.model.players:
+            if tile_id in player.tiles:
+                return False
+        return True
+
     def add_tiles(self, roll_base_number: int, roll_number: int,
                   tiles: List[str], roll_value: int) -> None:
 
         # check if roll has value
-        if not roll_value:
+        if roll_value <= 0:
             return
 
         roll_base = self.get_roll_base(roll_base_number)
@@ -216,6 +222,57 @@ class Controller:
 
         self.paste_handler.add_line()
 
+    def add_tiles_neutral(self, roll_base_number: int, roll_number: int,
+                          roll_value: int) -> None:
+
+        if roll_value <= 0:
+            return
+
+        player = self.get_roll_base(roll_base_number).player
+        if not player.tiles:
+            self.paste_handler.expansion_without_tiles(roll_number)
+            return
+
+        free_tiles: Dict[str, float] = {}
+        checked_tiles = []
+
+        while roll_value:
+
+            # getting nearby tiles
+            for tile in player.tiles:
+
+                if tile in checked_tiles:
+                    continue
+                checked_tiles.append(tile)
+
+                for routed in self.res_handler.get_tile(tile).get('routes'):
+
+                    if not self.is_tile_free(routed):
+                        continue
+
+                    distance = self.res_handler.calc_distance(tile, routed)
+                    if not free_tiles.get(routed):
+                        free_tiles[routed] = distance
+                    else:
+                        free_tiles[routed] = min(free_tiles[routed], distance)
+
+            if not free_tiles:
+                break
+
+            # getting key with min distance to player tiles
+            nearest = min(free_tiles, key=free_tiles.get)
+
+            player.tiles.append(nearest)
+            roll_value -= 1
+            free_tiles.__delitem__(nearest)
+            self.paste_handler.capture(roll_number, nearest, player.name)
+
+        if roll_value:
+            self.paste_handler.expansion_no_free_tiles(roll_number)
+            self.paste_handler.roll_value_surplus(roll_base_number, roll_value)
+
+        return
+
     def del_tile(self, tile_id: str) -> str | None:
 
         for player in self.model.players:
@@ -290,6 +347,18 @@ class Controller:
 
         return True
 
+    def parse_roll_neutral(self, post: Post) -> bool:
+
+        rb_num = self.comment_parser.parse_roll_on_neutral(post.comment)
+        if not rb_num:
+            return False
+
+        roll_value = self.comment_parser.get_roll_value(post.num)
+
+        self.add_tiles_neutral(rb_num, post.num, roll_value)
+
+        return True
+
     def parse_post(self, post: Post) -> None:
 
         post.comment = self.comment_parser.clear(post.comment)
@@ -297,6 +366,8 @@ class Controller:
         if self.parse_roll_base(post):
             return
         if self.parse_roll(post):
+            return
+        if self.parse_roll_neutral(post):
             return
         # TODO: reply to players who did not specify tiles in the roll
 
@@ -491,7 +562,7 @@ class Controller:
             return
 
         print("Checking drowning...")
-        if self.check_drowning(thread):
+        if self.check_drowning():
             self.posting_bump()
             return
 

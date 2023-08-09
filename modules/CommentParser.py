@@ -104,6 +104,18 @@ class CommentParser:
         return int(num), result
 
     @staticmethod
+    def parse_roll_on_neutral(comment: str) -> int | None:
+        pattern = compile(
+            r"(\n|^)>>(\d+?)\s*\n[^\n]*?(rol|рол)[^\n]*?"
+            r"(расширение|expan[ds])",
+            flags=IGNORECASE
+        )
+        r = search(pattern, comment)
+        if not r:
+            return
+        return int(r.group(2))
+
+    @staticmethod
     def get_roll_value(num: int | str) -> int:
 
         vals = {
