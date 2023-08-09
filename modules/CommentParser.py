@@ -139,3 +139,7 @@ class CommentParser:
             return val
 
         return vals[5]
+
+    @staticmethod
+    def contains_cyrillic_only(s: str) -> bool:
+        return not search(r'[^а-я\s]', s, flags=IGNORECASE)

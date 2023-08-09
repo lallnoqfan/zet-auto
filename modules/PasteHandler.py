@@ -1,3 +1,6 @@
+from typing import Optional
+
+
 class PasteHandler:
 
     def __init__(self) -> None:
@@ -63,6 +66,17 @@ class PasteHandler:
     def too_long_name(self, num: int) -> None:
         self._add_reply(num, '%%макс. длина названия - '
                              '50 символов%%')  # hardcode
+
+    def non_cyrillic(self, num: int) -> None:
+        self._add_reply(num, '%%имя может содержать только '
+                             'кириллицу и пробелы%%')
+
+    def creation_denied(self, num: int, reason: Optional[str]):
+        self._add_reply(num, f"%%создание запрещено"
+                             f"{f', причина: {reason}' if reason else ''}%%")
+
+    def black_listed_name(self, num: int) -> None:
+        self.creation_denied(num, "имя в черном списке")
 
     def invalid_roll_base(self, num: int, roll_base_num: int) -> None:
         self._add_reply(num, f'%%пост >>{roll_base_num} не является роллбазой '

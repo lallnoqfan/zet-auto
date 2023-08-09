@@ -21,6 +21,7 @@ class Controller:
     def __init__(self, model_name: str) -> None:
 
         self.comment_parser = CommentParser()
+        self.premod_handler = PremodHandler()
         self.res_handler = ResourcesHandler()
         self.saves_handler = SavesHandler()
 
@@ -235,9 +236,23 @@ class Controller:
             self.paste_handler.too_long_name(post.num)
             return True
 
-        player = self.get_player(name, color)
+        # non-cyrillic symbols check
+        if not self.comment_parser.contains_cyrillic_only(name):
+            self.paste_handler.non_cyrillic(post.num)
+            return True
+
+        # user moderation
+        mod_answer, mod_reason = self.premod_handler.moderate(name)
+        if not mod_answer:
+            if mod_reason == 'in black list':
+                self.paste_handler.black_listed_name(post.num)
+            else:
+                self.paste_handler.creation_denied(post.num, mod_reason)
+            return True
+        # after all checks
 
         # adding new roll base to existing player
+        player = self.get_player(name, color)
         if player:
             self.add_roll_base(player, post.num)
             self.paste_handler.new_roll_base(post.num)
