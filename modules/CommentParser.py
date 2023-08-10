@@ -116,6 +116,22 @@ class CommentParser:
         return int(r.group(2))
 
     @staticmethod
+    def parse_roll_against(comment: str) -> Tuple[int, str] | None:
+        pattern = compile(
+            r"(\n|^)>>(\d+?)\s*\n[^\n]*?(rol|рол)[^\n]*?"
+            r"(против|against) ([а-я ]{1,50})",
+            flags=IGNORECASE
+        )
+        r = search(pattern, comment)
+        if not r:
+            return
+
+        num = int(r.group(2))  # >>(\d+?)
+        name = r.group(5)      # ([а-я ]{1,50})
+
+        return num, name
+
+    @staticmethod
     def get_roll_value(num: int | str) -> int:
 
         vals = {

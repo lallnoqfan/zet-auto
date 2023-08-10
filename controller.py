@@ -1,4 +1,5 @@
 from datetime import datetime
+from difflib import get_close_matches
 from logging import basicConfig, error as log_error, ERROR
 from time import sleep, perf_counter
 from traceback import print_tb
@@ -122,25 +123,30 @@ class Controller:
                 return False
         return True
 
-    def add_tiles(self, roll_base_number: int, roll_number: int,
-                  tiles: List[str], roll_value: int) -> None:
+    def _pre_addition(self, roll_base_number: int, roll_number: int,
+                      roll_value: int) -> bool:
 
-        # check if roll has value
         if roll_value <= 0:
-            return
+            return False
 
         roll_base = self.get_roll_base(roll_base_number)
-
-        # check if roll base exists
         if not roll_base:
             self.paste_handler.invalid_roll_base(roll_number, roll_base_number)
-            return
-
-        player = roll_base.player
+            return False
 
         self.paste_handler.add_line()
 
-        while roll_value and tiles:
+        return True
+
+    def add_tiles(self, roll_base_number: int, roll_number: int,
+                  tiles: List[str], roll_value: int) -> None:
+
+        if not self._pre_addition(roll_base_number, roll_number, roll_value):
+            return
+
+        player = self.get_roll_base(roll_base_number).player
+
+        while roll_value > 0 and tiles:
 
             # check if tiles exists
             _f = False
@@ -225,19 +231,21 @@ class Controller:
     def add_tiles_neutral(self, roll_base_number: int, roll_number: int,
                           roll_value: int) -> None:
 
-        if roll_value <= 0:
+        if not self._pre_addition(roll_base_number, roll_number, roll_value):
             return
 
         player = self.get_roll_base(roll_base_number).player
         if not player.tiles:
             self.paste_handler.expansion_without_tiles(roll_number)
+            self.paste_handler.roll_value_surplus(roll_number, roll_value)
             return
+
+        self.paste_handler.add_line()
 
         free_tiles: Dict[str, float] = {}
         checked_tiles = []
 
-        while roll_value:
-
+        while roll_value > 0:
             # getting nearby tiles
             for tile in player.tiles:
 
@@ -267,11 +275,73 @@ class Controller:
             free_tiles.__delitem__(nearest)
             self.paste_handler.capture(roll_number, nearest, player.name)
 
-        if roll_value:
+        if roll_value > 0:
             self.paste_handler.expansion_no_free_tiles(roll_number)
             self.paste_handler.roll_value_surplus(roll_base_number, roll_value)
 
-        return
+        self.paste_handler.add_line()
+
+    def add_tiles_against(self, roll_base_number: int, roll_number: int,
+                          roll_value: int, attacked_name: str) -> None:
+
+        if not self._pre_addition(roll_base_number, roll_number, roll_value):
+            return
+
+        # check if player has tiles
+        attacking = self.get_roll_base(roll_base_number).player
+        if not attacking.tiles:
+            self.paste_handler.against_without_tiles(roll_number)
+            self.paste_handler.roll_value_surplus(roll_number, roll_value)
+            return
+
+        # try to find the closest match in players' names
+        match = get_close_matches(
+            attacked_name, [player.name for player in self.model.players], 1
+        )
+        if not match:
+            self.paste_handler.against_no_matches(roll_number)
+            return
+
+        attacked = self.get_player(name=match[0])
+
+        tiles: Dict[str, float] = dict()
+        checked_tiles = []
+
+        while roll_value > 0:
+            for tile in attacking.tiles:
+
+                if tile in checked_tiles:
+                    continue
+                checked_tiles.append(tile)
+
+                for routed in self.res_handler.get_tile(tile).get('routes'):
+
+                    if routed not in attacked.tiles:
+                        continue
+
+                    distance = self.res_handler.calc_distance(tile, routed)
+                    if not tiles.get(routed):
+                        tiles[routed] = distance
+                    else:
+                        tiles[routed] = min(tiles[routed], distance)
+
+            if not tiles:
+                break
+
+            nearest = min(tiles, key=tiles.get)
+
+            attacking.tiles.append(nearest)
+            attacked.tiles.remove(nearest)
+            roll_value -= 1
+            tiles.__delitem__(nearest)
+            self.paste_handler.capture_attack(roll_number, nearest,
+                                              attacking.name, attacked.name)
+
+        if roll_value > 0:
+            self.paste_handler.against_no_routes(roll_number, attacked.name)
+            self.paste_handler.roll_value_surplus(roll_base_number, roll_value)
+
+        self.paste_handler.add_line()
 
     def del_tile(self, tile_id: str) -> str | None:
 
@@ -359,6 +429,20 @@ class Controller:
 
         return True
 
+    def parse_roll_against(self, post: Post) -> bool:
+
+        data = self.comment_parser.parse_roll_against(post.comment)
+
+        if not data:
+            return False
+
+        rb_num, attacked_name = data
+        value = self.comment_parser.get_roll_value(post.num)
+
+        self.add_tiles_against(rb_num, post.num, value, attacked_name)
+
+        return True
+
     def parse_post(self, post: Post) -> None:
 
         post.comment = self.comment_parser.clear(post.comment)
@@ -368,6 +452,8 @@ class Controller:
         if self.parse_roll(post):
             return
         if self.parse_roll_neutral(post):
+            return
+        if self.parse_roll_against(post):
             return
         # TODO: reply to players who did not specify tiles in the roll
 
@@ -474,7 +560,7 @@ class Controller:
             comment=f"***{new_thread * 3}***",
         )
 
-        self._posting(schema, 'Аnnouncement')
+        self._posting(schema, 'Announcement')
 
     def fetch_thread(self) -> DvachThread | None:
         return self.api.get_thread(self.model.board, self.model.thread)
@@ -611,7 +697,7 @@ class Controller:
             except Exception as e:
 
                 print('\n' + '=' * 50)
-                print(f"!!!{' UNHANDLED EXCEPTION OCCURED ': ^44}!!!")
+                print(f"!!!{' UNHANDLED EXCEPTION OCCURRED ': ^44}!!!")
                 print(f"!!!{' KLOZET ZABILSYA ': ^44}!!!")
                 print(f"!!!{' POVTORYAU KLOZET ZABILSYA ': ^44}!!!")
                 print('=' * 50 + '\n')

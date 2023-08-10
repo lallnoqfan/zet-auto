@@ -45,8 +45,8 @@ class PasteHandler:
 
     def creation_attack(self, num: int, tile: str,
                         player_name: str, attacked_name: str) -> None:
-        self._add_reply(num, f"**\"{player_name}\" создаётся на {tile.upper()}, "
-                             f"захватывая клетку \"{attacked_name}\"**")
+        self._add_reply(num, f"**\"{player_name}\" создаётся на "
+                             f"{tile.upper()}, захватывая клетку \"{attacked_name}\"**")
 
     def capture(self, num: int, tile: str, player_name: str) -> None:
         self._add_reply(num, f"\"{player_name}\" захватывает "
@@ -102,3 +102,14 @@ class PasteHandler:
 
     def expansion_no_free_tiles(self, num: int) -> None:
         self._add_reply(num, '%%нет доступных для расширения клеток%%')
+
+    def against_without_tiles(self, num: int) -> None:
+        self._add_reply(num, '%%нельзя роллить на атаку, '
+                             'если у вас нет клеток%%')
+
+    def against_no_routes(self, num: int, name: str) -> None:
+        self._add_reply(num, f'%%нет доступных путей к \"{name}\"%%')
+
+    def against_no_matches(self, num: int) -> None:
+        self._add_reply(num, f'%%не найдено близких '
+                             f'совпадений с указанным именем%%')
