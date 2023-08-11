@@ -123,50 +123,37 @@ class Controller:
                 return False
         return True
 
-    def _pre_addition(self, roll_base_number: int, roll_number: int,
-                      roll_value: int) -> bool:
-
-        if roll_value <= 0:
-            return False
+    def _pre_addition(self, roll_base_number: int, roll_number: int) -> bool:
 
         roll_base = self.get_roll_base(roll_base_number)
         if not roll_base:
             self.paste_handler.invalid_roll_base(roll_number, roll_base_number)
             return False
 
-        self.paste_handler.add_line()
-
         return True
 
     def add_tiles(self, roll_base_number: int, roll_number: int,
-                  tiles: List[str], roll_value: int) -> None:
+                  tiles: List[str], roll_value: int) -> int:
 
-        if not self._pre_addition(roll_base_number, roll_number, roll_value):
-            return
+        if not self._pre_addition(roll_base_number, roll_number):
+            return roll_value
 
         player = self.get_roll_base(roll_base_number).player
 
+        # check if tiles exists
+        for tile in tiles:
+            if not self.res_handler.tile_exists(tile):
+                tiles.remove(tile)
+                self.paste_handler.invalid_tile(roll_number, tile)
+
+        # check if player owns tiles
+        for tile in tiles:
+            if tile in player.tiles:
+                _f = True
+                tiles.remove(tile)
+                self.paste_handler.already_owns(roll_number, tile)
+
         while roll_value > 0 and tiles:
-
-            # check if tiles exists
-            _f = False
-            for tile in tiles:
-                if not self.res_handler.tile_exists(tile):
-                    _f = True
-                    tiles.remove(tile)
-                    self.paste_handler.invalid_tile(roll_number, tile)
-            if _f:
-                continue
-
-            # check if player owns tiles
-            _f = False
-            for tile in tiles:
-                if tile in player.tiles:
-                    _f = True
-                    tiles.remove(tile)
-                    self.paste_handler.already_owns(roll_number, tile)
-            if _f:
-                continue
 
             # if player has no tiles
             if not player.tiles:
@@ -223,24 +210,18 @@ class Controller:
 
             break
 
-        if roll_value > 0:
-            self.paste_handler.roll_value_surplus(roll_number, roll_value)
-
-        self.paste_handler.add_line()
+        return roll_value
 
     def add_tiles_neutral(self, roll_base_number: int, roll_number: int,
-                          roll_value: int) -> None:
+                          roll_value: int) -> int:
 
-        if not self._pre_addition(roll_base_number, roll_number, roll_value):
-            return
+        if not self._pre_addition(roll_base_number, roll_number):
+            return roll_value
 
         player = self.get_roll_base(roll_base_number).player
         if not player.tiles:
             self.paste_handler.expansion_without_tiles(roll_number)
-            self.paste_handler.roll_value_surplus(roll_number, roll_value)
-            return
-
-        self.paste_handler.add_line()
+            return roll_value
 
         free_tiles: Dict[str, float] = {}
         checked_tiles = []
@@ -277,22 +258,20 @@ class Controller:
 
         if roll_value > 0:
             self.paste_handler.expansion_no_free_tiles(roll_number)
-            self.paste_handler.roll_value_surplus(roll_base_number, roll_value)
 
-        self.paste_handler.add_line()
+        return roll_value
 
     def add_tiles_against(self, roll_base_number: int, roll_number: int,
-                          roll_value: int, attacked_name: str) -> None:
+                          roll_value: int, attacked_name: str) -> int:
 
-        if not self._pre_addition(roll_base_number, roll_number, roll_value):
-            return
+        if not self._pre_addition(roll_base_number, roll_number):
+            return roll_value
 
         # check if player has tiles
         attacking = self.get_roll_base(roll_base_number).player
         if not attacking.tiles:
             self.paste_handler.against_without_tiles(roll_number)
-            self.paste_handler.roll_value_surplus(roll_number, roll_value)
-            return
+            return roll_value
 
         # try to find the closest match in players' names
         match = get_close_matches(
@@ -300,9 +279,15 @@ class Controller:
         )
         if not match:
             self.paste_handler.against_no_matches(roll_number)
-            return
+            return roll_value
 
+        # check if attacked player has tiles
         attacked = self.get_player(name=match[0])
+        print(attacked)
+        print(attacked_name)
+        if not attacked.tiles:
+            self.paste_handler.against_without_tiles(roll_number)
+            return roll_value
 
         tiles: Dict[str, float] = dict()
         checked_tiles = []
@@ -339,9 +324,8 @@ class Controller:
 
         if roll_value > 0:
             self.paste_handler.against_no_routes(roll_number, attacked.name)
-            self.paste_handler.roll_value_surplus(roll_base_number, roll_value)
 
-        self.paste_handler.add_line()
+        return roll_value
 
     def del_tile(self, tile_id: str) -> str | None:
 
@@ -403,45 +387,43 @@ class Controller:
 
         return True
 
-    def parse_roll(self, post: Post) -> bool:
+    def parse_roll(self, post: Post, roll_value: int) -> int:
 
         data = self.comment_parser.parse_roll(post.comment)
 
         if not data:
-            return False
+            return roll_value
 
         roll_base_number, tiles = data
-        value = self.comment_parser.get_roll_value(post.num)
 
-        self.add_tiles(roll_base_number, post.num, tiles, value)
+        roll_value = self.add_tiles(roll_base_number, post.num, tiles, roll_value)
 
-        return True
+        return roll_value
 
-    def parse_roll_neutral(self, post: Post) -> bool:
+    def parse_roll_neutral(self, post: Post, roll_value: int) -> int:
 
         rb_num = self.comment_parser.parse_roll_on_neutral(post.comment)
         if not rb_num:
-            return False
+            return roll_value
 
-        roll_value = self.comment_parser.get_roll_value(post.num)
+        roll_value = self.add_tiles_neutral(rb_num, post.num, roll_value)
 
-        self.add_tiles_neutral(rb_num, post.num, roll_value)
+        return roll_value
 
-        return True
-
-    def parse_roll_against(self, post: Post) -> bool:
+    def parse_roll_against(self, post: Post, roll_value: int) -> int:
 
         data = self.comment_parser.parse_roll_against(post.comment)
 
         if not data:
-            return False
+            return roll_value
 
         rb_num, attacked_name = data
-        value = self.comment_parser.get_roll_value(post.num)
 
-        self.add_tiles_against(rb_num, post.num, value, attacked_name)
+        roll_value = self.add_tiles_against(
+            rb_num, post.num, roll_value, attacked_name
+        )
 
-        return True
+        return roll_value
 
     def parse_post(self, post: Post) -> None:
 
@@ -449,23 +431,41 @@ class Controller:
 
         if self.parse_roll_base(post):
             return
-        if self.parse_roll(post):
+
+        roll_value = self.comment_parser.get_roll_value(post.num)
+        if roll_value <= 0:
             return
-        if self.parse_roll_neutral(post):
+
+        self.paste_handler.add_line()
+
+        roll_value = self.parse_roll(post, roll_value)
+        if roll_value <= 0:
+            self.paste_handler.add_line()
             return
-        if self.parse_roll_against(post):
+
+        roll_value = self.parse_roll_neutral(post, roll_value)
+        if roll_value <= 0:
+            self.paste_handler.add_line()
             return
-        # TODO: reply to players who did not specify tiles in the roll
+
+        roll_value = self.parse_roll_against(post, roll_value)
+
+        if roll_value <= 0:
+            self.paste_handler.add_line()
+            return
+
+        self.paste_handler.roll_value_surplus(post.num, roll_value)
+        self.paste_handler.add_line()
 
     def parse_thread(self, thread: DvachThread) -> None:
 
         for post in thread.posts:
 
-            if post.number > 500:  # hardcoded bump limit
-                break
-
             if post.number <= self.model.last_number:
                 continue
+
+            if post.number > 500:  # hardcoded bump limit
+                break
 
             self.parse_post(post)
             self.model.last_number = post.number

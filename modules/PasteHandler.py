@@ -94,18 +94,21 @@ class PasteHandler:
         self._add_reply(num, f'%%нет доступных путей к {tile.upper()}%%')
 
     def invalid_tile(self, num: int, tile: str) -> None:
-        self._add_reply(num, f'%%клетка {tile.upper()} не существует%%')
+        self._add_reply(num, f'%%территория {tile.upper()} не существует%%')
 
     def expansion_without_tiles(self, num: int) -> None:
         self._add_reply(num, '%%нельзя роллить на расширение, '
                              'если у вас нет клеток%%')
 
     def expansion_no_free_tiles(self, num: int) -> None:
-        self._add_reply(num, '%%нет доступных для расширения клеток%%')
+        self._add_reply(num, '%%нет доступных для расширения территорий%%')
 
     def against_without_tiles(self, num: int) -> None:
         self._add_reply(num, '%%нельзя роллить на атаку, '
-                             'если у вас нет клеток%%')
+                             'если у вас нет территорий%%')
+
+    def against_no_tiles(self, num: int, name: str) -> None:
+        self._add_reply(num, f'%%{name} не имеет территорий%%')
 
     def against_no_routes(self, num: int, name: str) -> None:
         self._add_reply(num, f'%%нет доступных путей к \"{name}\"%%')
