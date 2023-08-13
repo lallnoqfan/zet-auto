@@ -11,7 +11,7 @@ class DvachPostingSchemaIn(BaseModel):
     thread:  str | int = ''
     comment: str = ''
 
-    op_mark: int = 1
+    op_mark: str | int = '1'
     subject: str = ''
     name:    str = ''
     email:   str = ''
@@ -37,6 +37,10 @@ class DvachPostingSchemaIn(BaseModel):
     def to_data(self) -> MultipartEncoder:
         data = self.to_dict()
         del data['files']
+
+        for key in data:
+            if type(data[key]) is int:
+                data[key] = str(data[key])
 
         data = [(key, data[key]) for key in data]
         if self.files:
