@@ -1,31 +1,43 @@
-from os import mkdir, remove
-from os.path import exists
+from pathlib import Path
 from pickle import dump, load
+from typing import List
 
 from models import GameData
 
 
 class SavesHandler:
 
-    def __init__(self) -> None:
+    _extension: str = '.zet'
+    _path: Path = Path(__file__).parent / 'saves'
 
-        self.extension = '.zet'
-        self.path = str(__file__).replace(
-            str(__file__).split('\\')[-1], 'saves\\'
-        )
+    _path.mkdir(exist_ok=True)
 
-        if not exists(self.path):
-            mkdir(self.path)
+    @classmethod
+    def _get_path(cls, name: str) -> Path:
+        return cls._path / f"{name}{cls._extension}"
 
-    def exists(self, name: str) -> bool:
-        return exists(f"{self.path}{name}{self.extension}")
+    @classmethod
+    def get_list(cls) -> List[str]:
+        return [
+            p.stem
+            for p in cls._path.iterdir()
+            if p.suffix == cls._extension
+        ]
 
-    def load(self, name: str) -> GameData:
-        return load(open(f"{self.path}{name}{self.extension}", "rb"))
+    @classmethod
+    def exists(cls, name: str) -> bool:
+        return cls._get_path(name).exists()
 
-    def dump(self, name: str, model: GameData) -> None:
-        dump(model, open(f"{self.path}{name}{self.extension}", "wb"))
+    @classmethod
+    def load(cls, name: str) -> GameData:
+        with open(cls._get_path(name), "rb") as f:
+            return load(f)
 
-    def delete(self, name: str) -> None:
-        if exists(f"{self.path}{name}{self.extension}"):
-            remove(f"{self.path}{name}{self.extension}")
+    @classmethod
+    def dump(cls, name: str, model: GameData) -> None:
+        with open(cls._get_path(name), "wb") as f:
+            dump(model, f)
+
+    @classmethod
+    def delete(cls, name: str) -> None:
+        cls._get_path(name).unlink(missing_ok=True)

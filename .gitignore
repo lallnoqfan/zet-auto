@@ -8,9 +8,9 @@ venv
 *.env
 
 ## Data files
-modules/saves
-modules/resources/black_list.txt
-modules/resources/white_list.txt
+*saves/
+*/resources/black_list.txt
+*/resources/white_list.txt
 
 ## Logging
 *.log
