@@ -1,62 +1,69 @@
 from argparse import ArgumentParser, Namespace
-from os.path import exists
+from os import PathLike
+from pathlib import Path
 from re import compile, search, IGNORECASE
 from typing import List, Tuple
 
 
 class PremodHandler:
 
-    def __init__(self) -> None:
+    _path: Path = Path(__file__) / 'resources'
 
-        self.path = str(__file__).replace(
-            str(__file__).split('\\')[-1], 'resources\\'
-        )
+    _white_list_path: Path = _path / 'white_list.txt'
+    _black_list_path: Path = _path / 'black_list.txt'
+
+    def __init__(self) -> None:
         self.white_list = self.get_white_list()
         self.black_list = self.get_black_list()
 
     @staticmethod
-    def _load_file(path: str) -> List[str]:
+    def _load_file(path: str | PathLike[str]) -> List[str]:
 
-        if exists(path):
-            with open(path, "r", encoding="utf-8") as f:
+        if not isinstance(path, PathLike):
+            path = Path(path)
+
+        if path.exists():
+            with path.open('r', encoding='utf-8') as f:
                 white_list = f.read().splitlines()
             return white_list
 
-        with open(path, "w"):
+        with path.open('w'):  # creating empty file
             pass
 
         return []
 
     @staticmethod
-    def _dump_file(lines: List[str], path: str) -> None:
-        with open(path, "w", encoding="utf-8") as f:
+    def _dump_file(lines: List[str], path: str | PathLike[str]) -> None:
+
+        if not isinstance(path, PathLike):
+            path = Path(path)
+
+        with path.open('w', encoding='utf-8') as f:
             for line in lines:
                 f.write(line + '\n')
 
-    def get_white_list(self) -> List[str]:
-        fp = f"{self.path}white_list.txt"
-        return self._load_file(fp)
+    @classmethod
+    def get_white_list(cls) -> List[str]:
+        return cls._load_file(cls._white_list_path)
 
-    def get_black_list(self) -> List[str]:
-        fp = f"{self.path}black_list.txt"
-        return self._load_file(fp)
+    @classmethod
+    def get_black_list(cls) -> List[str]:
+        return cls._load_file(cls._black_list_path)
 
     def dump_white_list(self) -> None:
-        fp = f"{self.path}white_list.txt"
-        self._dump_file(self.white_list, fp)
+        self._dump_file(self.white_list, self._white_list_path)
 
     def dump_black_list(self) -> None:
-        fp = f"{self.path}black_list.txt"
-        self._dump_file(self.black_list, fp)
+        self._dump_file(self.black_list, self._black_list_path)
 
     def add_to_white_list(self, name: str) -> None:
-        if name in self.white_list:
+        if name in self.white_list or name in self.black_list:
             return
         self.white_list.append(name)
         self.dump_white_list()
 
     def add_to_black_list(self, name: str) -> None:
-        if name in self.black_list:
+        if name in self.white_list or name in self.black_list:
             return
         self.black_list.append(name)
         self.dump_black_list()
