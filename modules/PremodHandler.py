@@ -7,7 +7,7 @@ from typing import List, Tuple
 
 class PremodHandler:
 
-    _path: Path = Path(__file__) / 'resources'
+    _path: Path = Path(__file__).parent / 'resources'
 
     _white_list_path: Path = _path / 'white_list.txt'
     _black_list_path: Path = _path / 'black_list.txt'
