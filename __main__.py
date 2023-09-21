@@ -1,5 +1,4 @@
 from argparse import ArgumentParser, Namespace
-from os import listdir
 
 from modules import SavesHandler
 from controller import Controller
@@ -49,18 +48,16 @@ class App:
     @staticmethod
     def read_all(args: Namespace) -> None:
 
-        handler = SavesHandler()
-        fps = listdir(handler.path)
+        names = SavesHandler.get_list()
 
-        if len(fps) == 0:
+        if len(names) == 0:
             print("No saves found")
             return
 
-        for fp in fps:
-            fp = fp[:-len(handler.extension)]
-            model = handler.load(fp)
+        for name in names:
+            model = SavesHandler.load(name)
 
-            print(f"Name   - {fp}")
+            print(f"Name   - {name}")
             print(f"Board  - {model.board or 'Not set'}")
             print(f"Thread - {model.thread or 'Not set'}")
 
@@ -83,13 +80,11 @@ class App:
 
         name = args.name
 
-        handler = SavesHandler()
-
-        if handler.exists(name):
+        if SavesHandler.exists(name):
             print(f"Save '{name}' already exists")
             return
 
-        SavesHandler().dump(args.name, GameData())
+        SavesHandler.dump(args.name, GameData())
 
         print(f"Created new save '{name}'")
 
@@ -98,13 +93,11 @@ class App:
 
         name = args.name
 
-        handler = SavesHandler()
-
-        if not handler.exists(name):
+        if not SavesHandler.exists(name):
             print(f"Save '{name}' does not exist")
             return
 
-        handler.delete(name)
+        SavesHandler.delete(name)
 
         print(f"Deleted save '{name}'")
 
@@ -113,9 +106,7 @@ class App:
 
         name = args.name
 
-        handler = SavesHandler()
-
-        if not handler.exists(name):
+        if not SavesHandler.exists(name):
             print(f"Save '{name}' does not exist")
             return
 
@@ -126,7 +117,7 @@ class App:
             return
 
         controller.set_thread(args.thread)
-        handler.dump(name, controller.model)
+        SavesHandler.dump(name, controller.model)
 
         print(f"Updated save '{name}'")
 
@@ -135,9 +126,7 @@ class App:
 
         name = args.name
 
-        handler = SavesHandler()
-
-        if not handler.exists(name):
+        if not SavesHandler.exists(name):
             print(f"Save '{name}' does not exist")
 
         Controller(name).loop()
