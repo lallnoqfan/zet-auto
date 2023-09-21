@@ -30,12 +30,12 @@ class SavesHandler:
 
     @classmethod
     def load(cls, name: str) -> GameData:
-        with open(cls._get_path(name), "rb") as f:
+        with cls._get_path(name).open('rb') as f:
             return load(f)
 
     @classmethod
     def dump(cls, name: str, model: GameData) -> None:
-        with open(cls._get_path(name), "wb") as f:
+        with cls._get_path(name).open('wb') as f:
             dump(model, f)
 
     @classmethod
