@@ -22,14 +22,10 @@ class Controller:
 
     def __init__(self, model_name: str) -> None:
 
-        self.comment_parser = CommentParser()
-        self.premod_handler = PremodHandler()
-        self.res_handler = ResourcesHandler()
-        self.saves_handler = SavesHandler()
-
         self.name = model_name
-        self.model = self.saves_handler.load(model_name)
+        self.model = SavesHandler.load(model_name)
 
+        self.premod_handler = PremodHandler()
         self.paste_handler = PasteHandler()
         self.paste_handler.set_paste(self.model.paste)
 
@@ -50,10 +46,10 @@ class Controller:
         self.set_thread(f"https://2ch.hk/{self.model.board}/res/{num}.html")
 
     def get_map_image(self) -> Image.Image:
-        return self.res_handler.draw_map(self.model.players)
+        return ResourcesHandler.draw_map(self.model.players)
 
     def get_players_image(self) -> Image.Image:
-        return self.res_handler.draw_players(self.model.players)
+        return ResourcesHandler.draw_players(self.model.players)
 
     def get_player(self, name: Optional[str] = None,
                    color: Optional[str] = None) -> Player | None:
@@ -142,7 +138,7 @@ class Controller:
 
         # check if tiles exists
         for tile in tiles:
-            if not self.res_handler.tile_exists(tile):
+            if not ResourcesHandler.tile_exists(tile):
                 tiles.remove(tile)
                 self.paste_handler.invalid_tile(roll_number, tile)
 
@@ -179,7 +175,7 @@ class Controller:
             _f = False
             player_tiles = set(player.tiles)
             for tile in tiles:
-                for route in self.res_handler.get_tile(tile).get('routes'):
+                for route in ResourcesHandler.get_tile(tile).get('routes'):
                     if route not in player_tiles:
                         continue
 
@@ -234,12 +230,12 @@ class Controller:
                     continue
                 checked_tiles.append(tile)
 
-                for routed in self.res_handler.get_tile(tile).get('routes'):
+                for routed in ResourcesHandler.get_tile(tile).get('routes'):
 
                     if not self.is_tile_free(routed):
                         continue
 
-                    distance = self.res_handler.calc_distance(tile, routed)
+                    distance = ResourcesHandler.calc_distance(tile, routed)
                     if not free_tiles.get(routed):
                         free_tiles[routed] = distance
                     else:
@@ -283,10 +279,8 @@ class Controller:
 
         # check if attacked player has tiles
         attacked = self.get_player(name=match[0])
-        print(attacked)
-        print(attacked_name)
         if not attacked.tiles:
-            self.paste_handler.against_without_tiles(roll_number)
+            self.paste_handler.against_no_tiles(roll_number, attacked.name)
             return roll_value
 
         tiles: Dict[str, float] = dict()
@@ -299,12 +293,12 @@ class Controller:
                     continue
                 checked_tiles.append(tile)
 
-                for routed in self.res_handler.get_tile(tile).get('routes'):
+                for routed in ResourcesHandler.get_tile(tile).get('routes'):
 
                     if routed not in attacked.tiles:
                         continue
 
-                    distance = self.res_handler.calc_distance(tile, routed)
+                    distance = ResourcesHandler.calc_distance(tile, routed)
                     if not tiles.get(routed):
                         tiles[routed] = distance
                     else:
@@ -336,7 +330,7 @@ class Controller:
 
     def parse_roll_base(self, post: Post) -> bool:
 
-        data = self.comment_parser.parse_roll_base(post.comment)
+        data = CommentParser.parse_roll_base(post.comment)
 
         if not data:
             return False
@@ -344,12 +338,12 @@ class Controller:
         name, color = data
 
         # name length check
-        if len(name) > 50:  # hardcode
+        if len(name) > 50:
             self.paste_handler.too_long_name(post.num)
             return True
 
         # non-cyrillic symbols check
-        if not self.comment_parser.contains_cyrillic_only(name):
+        if not CommentParser.contains_cyrillic_only(name):
             self.paste_handler.non_cyrillic(post.num)
             return True
 
@@ -361,6 +355,7 @@ class Controller:
             else:
                 self.paste_handler.creation_denied(post.num, mod_reason)
             return True
+
         # after all checks
 
         # adding new roll base to existing player
@@ -389,7 +384,7 @@ class Controller:
 
     def parse_roll(self, post: Post, roll_value: int) -> int:
 
-        data = self.comment_parser.parse_roll(post.comment)
+        data = CommentParser.parse_roll(post.comment)
 
         if not data:
             return roll_value
@@ -402,7 +397,7 @@ class Controller:
 
     def parse_roll_neutral(self, post: Post, roll_value: int) -> int:
 
-        rb_num = self.comment_parser.parse_roll_on_neutral(post.comment)
+        rb_num = CommentParser.parse_roll_on_neutral(post.comment)
         if not rb_num:
             return roll_value
 
@@ -412,7 +407,7 @@ class Controller:
 
     def parse_roll_against(self, post: Post, roll_value: int) -> int:
 
-        data = self.comment_parser.parse_roll_against(post.comment)
+        data = CommentParser.parse_roll_against(post.comment)
 
         if not data:
             return roll_value
@@ -427,12 +422,12 @@ class Controller:
 
     def parse_post(self, post: Post) -> None:
 
-        post.comment = self.comment_parser.clear(post.comment)
+        post.comment = CommentParser.clear(post.comment)
 
         if self.parse_roll_base(post):
             return
 
-        roll_value = self.comment_parser.get_roll_value(post.num)
+        roll_value = CommentParser.get_roll_value(post.num)
         if roll_value <= 0:
             return
 
@@ -531,7 +526,7 @@ class Controller:
 
         data = DvachPostingSchemaIn(
             board=self.model.board,
-            comment=self.res_handler.get_op_post(),
+            comment=ResourcesHandler.get_op_post(),
             files=files,
         )
 
@@ -673,7 +668,7 @@ class Controller:
 
                 print("Saving model...")
                 self.model.paste = self.paste_handler.get_paste()
-                self.saves_handler.dump(self.name, self.model)
+                SavesHandler.dump(self.name, self.model)
 
             except ThreadNotSetException as e:
                 print(e.message)
