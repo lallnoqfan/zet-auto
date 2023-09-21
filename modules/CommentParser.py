@@ -31,7 +31,8 @@ class CommentParser:
 
         return s
 
-    def parse_roll_base(self, comment: str) -> Tuple[str, str] | None:
+    @classmethod
+    def parse_roll_base(cls, comment: str) -> Tuple[str, str] | None:
 
         pattern = compile(
             r"(рол{1,10}база|rol{1,10}base)\s*?\n(.+?)\s*?\n#?([a-fA-F0-9]{6})",
@@ -46,9 +47,10 @@ class CommentParser:
         name = r.group(2)         # "(.+?)"
         color = f"#{r.group(3)}"  # "#?([a-fA-F0-9]{6})"
 
-        return name, self._cyrillic_to_roman(color.lower())
+        return name, cls._cyrillic_to_roman(color.lower())
 
-    def parse_roll(self, comment: str) -> Tuple[int, List[str]] | None:
+    @classmethod
+    def parse_roll(cls, comment: str) -> Tuple[int, List[str]] | None:
 
         pattern = compile(
             r"(^|\n)>>(\d+?)\s*\n[^\n]*?(rol|рол)[^\n]*?((\d+[a-zа-я]* ?)+)",
@@ -66,7 +68,7 @@ class CommentParser:
         # tiles string processing
 
         tiles = tiles.lower()                   # "2B 3Ф" -> "2b 3ф"
-        tiles = self._cyrillic_to_roman(tiles)  # "2b 3ф" -> "2b 3f"
+        tiles = cls._cyrillic_to_roman(tiles)  # "2b 3ф" -> "2b 3f"
         tiles = tiles.split()                   # "2b 3f" -> ["2b", "3f"]
 
         # ["1a2b3cd"] -> ["1a", "2b", "3cd"]
@@ -141,7 +143,7 @@ class CommentParser:
             4: 5,
             5: 8,
         }
-        # todo: add values for sixtiple and above if needed
+        # add values for sixtiple and above if needed
 
         specials = {
             compile(r"^.*?((\d)\2(?!\2))((\d)(\4{2}))$"): 4,  # 11999 (2+3)
