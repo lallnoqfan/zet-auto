@@ -4,34 +4,37 @@ from typing import Optional
 class PasteHandler:
 
     def __init__(self) -> None:
-        self.paste = ''
+        self._paste = ''
 
-    def get_paste(self) -> str:
-        s = self.paste
+    @property
+    def paste(self) -> str:
+        s = self._paste
         if not s:
-            return s
+            return ''
         while s[-1] == '\n':
             s = s[:-1]
         return s
 
-    def set_paste(self, s: str) -> None:
-        self.paste = s
+    @paste.setter
+    def paste(self, new_paste: str) -> None:
+        self._paste = new_paste
 
-    def clear_paste(self) -> None:
-        self.paste = ''
+    @paste.deleter
+    def paste(self) -> None:
+        self._paste = ''
 
     def _add_reply(self, num: int, message: str) -> None:
-        self.paste += f">>{num} {message}\n"
+        self._paste += f">>{num} {message}\n"
 
     def add_line(self) -> None:
-        if not self.paste:
+        if not self._paste:
             return
-        if self.paste[-2:] != '\n\n':
-            self.paste += '\n'
+        if self._paste[-2:] != '\n\n':
+            self._paste += '\n'
 
     def bump_limit(self):
-        self.set_paste(self.paste + "**" + "СССССТТТТТОООООППППП  "
-                                           "РРРРРОООООЛЛЛЛЛЛЛЛЛЛ\n" * 5 + "**")
+        self._paste += "**" + ("СССССТТТТТОООООППППП "
+                               "РРРРРОООООЛЛЛЛЛЛЛЛЛЛ\n") * 5 + "**"
 
     def new_player(self, num: int) -> None:
         self._add_reply(num, '%%страна добавлена%%')
