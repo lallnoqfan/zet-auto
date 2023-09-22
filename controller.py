@@ -3,19 +3,19 @@ from difflib import get_close_matches
 from logging import basicConfig, error as log_error, ERROR
 from time import sleep, perf_counter
 from traceback import print_tb
-from typing import List, Optional, Dict
+from typing import List, Dict
 
 from PIL import Image
 from requests import Response
 from requests.exceptions import ConnectionError
-from webcolors import hex_to_rgb
 
 from errors import ThreadNotSetException
-from models import Player, RollBase, Usercode
+from models import Usercode
 from modules import CommentParser, PasteHandler, PremodHandler, \
     ResourcesHandler, SavesHandler
 from modules.api import DvachAPIHandler, DvachThread, Post, \
     DvachPostingSchemaIn, ImageFile
+from modules.db import GameDataDAO
 
 
 class Controller:
@@ -23,11 +23,11 @@ class Controller:
     def __init__(self, model_name: str) -> None:
 
         self.name = model_name
-        self.model = SavesHandler.load(model_name)
+        self.dao = GameDataDAO(SavesHandler.load(model_name))
 
         self.premod_handler = PremodHandler()
         self.paste_handler = PasteHandler()
-        self.paste_handler.set_paste(self.model.paste)
+        self.paste_handler.paste = self.dao.paste
 
         passcode_data = Usercode()
 
@@ -37,91 +37,15 @@ class Controller:
             passcode_data.passcode_auth,
         )
 
-    def set_thread(self, url: str) -> None:
-        self.model.last_number = 1
-        self.model.thread = url.split('/')[-1].split('.')[0]
-        self.model.board = url.split('/')[-3]
-
-    def set_thread_num(self, num: int) -> None:
-        self.set_thread(f"https://2ch.hk/{self.model.board}/res/{num}.html")
-
     def get_map_image(self) -> Image.Image:
-        return ResourcesHandler.draw_map(self.model.players)
+        return ResourcesHandler.draw_map(self.dao.players)
 
     def get_players_image(self) -> Image.Image:
-        return ResourcesHandler.draw_players(self.model.players)
-
-    def get_player(self, name: Optional[str] = None,
-                   color: Optional[str] = None) -> Player | None:
-
-        if not name and not color:
-            return
-
-        for player in self.model.players:
-            if (not name or player.name == name) and \
-                    (not color or player.color_hex == color):
-                return player
-
-    def check_player(self, name: Optional[str] = None,
-                     color: Optional[str] = None) -> bool:
-
-        if not name and not color:
-            return False
-
-        for player in self.model.players:
-            if player.name == name or player.color_hex == color:
-                return True
-
-        return False
-
-    def add_player(self, name: str, color: str) -> Player | None:
-
-        if self.check_player(name=name) or \
-                self.check_player(color=color):
-            return
-
-        player = Player(
-            name=name,
-            color_hex=color,
-            color_rgb=hex_to_rgb(color),
-        )
-
-        self.model.players.append(player)
-
-        return player
-
-    def del_empty_players(self) -> None:
-
-        self.model.players = [player for player in self.model.players if player.tiles]
-        self.model.roll_bases = []
-
-    def get_roll_base(self, post_num: int) -> RollBase | None:
-        return next((rb for rb in self.model.roll_bases
-                     if rb.post_num == post_num), None)
-
-    def add_roll_base(self, player: Player, post_num: int) -> RollBase | None:
-
-        if self.get_roll_base(post_num):
-            return
-
-        roll_base = RollBase(
-            player=player,
-            post_num=post_num,
-        )
-
-        self.model.roll_bases.append(roll_base)
-
-        return roll_base
-
-    def is_tile_free(self, tile_id: str) -> bool:
-        for player in self.model.players:
-            if tile_id in player.tiles:
-                return False
-        return True
+        return ResourcesHandler.draw_players(self.dao.players)
 
     def _pre_addition(self, roll_base_number: int, roll_number: int) -> bool:
 
-        roll_base = self.get_roll_base(roll_base_number)
+        roll_base = self.dao.get_roll_base(roll_base_number)
         if not roll_base:
             self.paste_handler.invalid_roll_base(roll_number, roll_base_number)
             return False
@@ -134,7 +58,7 @@ class Controller:
         if not self._pre_addition(roll_base_number, roll_number):
             return roll_value
 
-        player = self.get_roll_base(roll_base_number).player
+        player = self.dao.get_player(rb_num=roll_base_number)
 
         # check if tiles exists
         for tile in tiles:
@@ -155,7 +79,7 @@ class Controller:
             if not player.tiles:
                 for tile in tiles:
 
-                    attacked = self.del_tile(tile)
+                    attacked = self.dao.del_tile(tile)
 
                     if not attacked:
                         self.paste_handler.creation(roll_number, tile, player.name)
@@ -181,7 +105,7 @@ class Controller:
 
                     _f = True
 
-                    attacked = self.del_tile(tile)
+                    attacked = self.dao.del_tile(tile)
 
                     if not attacked:
                         self.paste_handler.capture(roll_number, tile, player.name)
@@ -214,7 +138,7 @@ class Controller:
         if not self._pre_addition(roll_base_number, roll_number):
             return roll_value
 
-        player = self.get_roll_base(roll_base_number).player
+        player = self.dao.get_player(rb_num=roll_base_number)
         if not player.tiles:
             self.paste_handler.expansion_without_tiles(roll_number)
             return roll_value
@@ -232,7 +156,7 @@ class Controller:
 
                 for routed in ResourcesHandler.get_tile(tile).get('routes'):
 
-                    if not self.is_tile_free(routed):
+                    if not self.dao.is_tile_free(routed):
                         continue
 
                     distance = ResourcesHandler.calc_distance(tile, routed)
@@ -264,21 +188,21 @@ class Controller:
             return roll_value
 
         # check if player has tiles
-        attacking = self.get_roll_base(roll_base_number).player
+        attacking = self.dao.get_roll_base(roll_base_number).player
         if not attacking.tiles:
             self.paste_handler.against_without_tiles(roll_number)
             return roll_value
 
         # try to find the closest match in players' names
         match = get_close_matches(
-            attacked_name, [player.name for player in self.model.players], 1
+            attacked_name, [player.name for player in self.dao.players], 1
         )
         if not match:
             self.paste_handler.against_no_matches(roll_number)
             return roll_value
 
         # check if attacked player has tiles
-        attacked = self.get_player(name=match[0])
+        attacked = self.dao.get_player(name=match[0])
         if not attacked.tiles:
             self.paste_handler.against_no_tiles(roll_number, attacked.name)
             return roll_value
@@ -321,13 +245,6 @@ class Controller:
 
         return roll_value
 
-    def del_tile(self, tile_id: str) -> str | None:
-
-        for player in self.model.players:
-            if tile_id in player.tiles:
-                player.tiles.remove(tile_id)
-                return player.name
-
     def parse_roll_base(self, post: Post) -> bool:
 
         data = CommentParser.parse_roll_base(post.comment)
@@ -359,25 +276,25 @@ class Controller:
         # after all checks
 
         # adding new roll base to existing player
-        player = self.get_player(name, color)
+        player = self.dao.get_player(name=name, color=color)
         if player:
-            self.add_roll_base(player, post.num)
+            self.dao.add_roll_base(player, post.num)
             self.paste_handler.new_roll_base(post.num)
             return True
 
         # ignore if player with same name exists
-        if self.check_player(name=name):
+        if self.dao.check_player(name=name):
             self.paste_handler.same_name(post.num)
             return True
 
         # or with same color
-        if self.check_player(color=color):
+        if self.dao.check_player(color=color):
             self.paste_handler.same_color(post.num)
             return True
 
         # creating new player
-        player = self.add_player(name, color)
-        self.add_roll_base(player, post.num)
+        player = self.dao.add_player(name, color)
+        self.dao.add_roll_base(player, post.num)
         self.paste_handler.new_player(post.num)
 
         return True
@@ -456,14 +373,14 @@ class Controller:
 
         for post in thread.posts:
 
-            if post.number <= self.model.last_number:
+            if post.number <= self.dao.last_number:
                 continue
 
             if post.number > 500:  # hardcoded bump limit
                 break
 
             self.parse_post(post)
-            self.model.last_number = post.number
+            self.dao.last_number = post.number
 
     def _posting(self, schema: DvachPostingSchemaIn,
                  name: str) -> Response | None:
@@ -489,8 +406,8 @@ class Controller:
     def posting_bump(self) -> None:
 
         schema = DvachPostingSchemaIn(
-            board=self.model.board,
-            thread=self.model.thread,
+            board=self.dao.board,
+            thread=self.dao.thread,
             comment='Бамп',
         )
 
@@ -502,9 +419,9 @@ class Controller:
         players_image = self.get_players_image()
 
         schema = DvachPostingSchemaIn(
-            board=self.model.board,
-            thread=self.model.thread,
-            comment=self.paste_handler.get_paste(),
+            board=self.dao.board,
+            thread=self.dao.thread,
+            comment=self.paste_handler.paste,
             files=[
                 ImageFile(name='map.png', image=map_image),
                 ImageFile(name='players.png', image=players_image),
@@ -513,19 +430,20 @@ class Controller:
 
         r = self._posting(schema, 'Post')
         if r:
-            self.paste_handler.clear_paste()
+            del self.paste_handler.paste
 
     def posting_thread(self) -> None:
 
-        self.del_empty_players()
+        del self.dao.empty_players
+        del self.dao.roll_bases
 
         files = [ImageFile(name='map.png', image=self.get_map_image())]
-        if self.model.players:
+        if self.dao.players:
             files.append(ImageFile(name='players.png',
                                    image=self.get_players_image()))
 
         data = DvachPostingSchemaIn(
-            board=self.model.board,
+            board=self.dao.board,
             comment=ResourcesHandler.get_op_post(),
             files=files,
         )
@@ -535,30 +453,29 @@ class Controller:
         if not r:
             return
 
-        self.set_thread_num(r.json().get('thread'))
+        self.dao.thread = r.json().get('thread')
 
         cookies, d = r.cookies, dict()
         for cookie in cookies:
             if cookie.name[:2] == 'op':
                 d.update({cookie.name: cookie.value})  # noqa
         self.api.update_cookies(d)
-        self.model.cookies.update(d)
+        self.dao.cookies.update(d)
 
     def posting_announcement(self, thread_num: str | int) -> None:
 
-        new_thread = f"https://2ch.hk/{self.model.board}/" \
-                     f"res/{self.model.thread}.html\n"
+        new_thread_link = self.dao.link
 
         schema = DvachPostingSchemaIn(
-            board=self.model.board,
+            board=self.dao.board,
             thread=thread_num,
-            comment=f"***{new_thread * 3}***",
+            comment=f"***{new_thread_link * 3}***",
         )
 
         self._posting(schema, 'Announcement')
 
     def fetch_thread(self) -> DvachThread | None:
-        return self.api.get_thread(self.model.board, self.model.thread)
+        return self.api.get_thread(self.dao.board, self.dao.thread)
 
     def check_drowning(self) -> bool:
 
@@ -579,14 +496,14 @@ class Controller:
 
     def check_bump_limit(self) -> bool:
 
-        if not self.model.last_number >= 500:  # hardcoded bump limit
+        if not self.dao.last_number >= 500:  # hardcoded bump limit
             return False
 
         self.paste_handler.bump_limit()
         self.posting_post()
         self.sleep()
 
-        old_thread = self.model.thread
+        old_thread = self.dao.thread
 
         self.posting_thread()
         self.sleep()
@@ -611,7 +528,7 @@ class Controller:
 
     def loop_iter(self) -> None:
 
-        if not self.model.board or not self.model.thread:
+        if not self.dao.board or not self.dao.thread:
             raise ThreadNotSetException
 
         print(f"{f'  {datetime.now()}  ':=^80}")
@@ -627,9 +544,9 @@ class Controller:
         print("Parsing thread...")
         self.parse_thread(thread)
 
-        if self.paste_handler.get_paste():
+        if self.paste_handler.paste:
             print(f"{f'  paste  ':*^60}")
-            print(self.paste_handler.get_paste())
+            print(self.paste_handler.paste)
             print('*' * 60)
 
             print("Posting map...")
@@ -667,21 +584,21 @@ class Controller:
                 self.loop_iter()
 
                 print("Saving model...")
-                self.model.paste = self.paste_handler.get_paste()
-                SavesHandler.dump(self.name, self.model)
+                self.dao.paste = self.paste_handler.paste
+                SavesHandler.dump(self.name, self.dao.model)
 
             except ThreadNotSetException as e:
                 print(e.message)
 
-                print(f"Want to create new one? board - {self.model.board} (y/n)")
+                print(f"Want to create new one? board - {self.dao.board} (y/n)")
                 answer = input()
 
                 if answer != 'y':
                     break
 
-                if not self.model.board:
+                if not self.dao.board:
                     print("Enter board code: ")
-                    self.model.board = input()
+                    self.dao.board = input()
 
                 self.posting_thread()
 
