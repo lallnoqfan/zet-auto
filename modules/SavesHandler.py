@@ -2,7 +2,7 @@ from pathlib import Path
 from pickle import dump, load
 from typing import List
 
-from models import GameData
+from modules.db import GameData
 
 
 class SavesHandler:

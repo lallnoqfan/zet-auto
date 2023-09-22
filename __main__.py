@@ -2,7 +2,7 @@ from argparse import ArgumentParser, Namespace
 
 from modules import SavesHandler
 from controller import Controller
-from models import GameData
+from modules.db import GameData, GameDataDAO
 
 
 class App:
@@ -110,14 +110,14 @@ class App:
             print(f"Save '{name}' does not exist")
             return
 
-        controller = Controller(name)
+        dao = GameDataDAO(SavesHandler.load(name))
 
         if not args.thread:
             print("No params specified")
             return
 
-        controller.set_thread(args.thread)
-        SavesHandler.dump(name, controller.model)
+        dao.link = args.thread  # todo: add validation
+        SavesHandler.dump(name, dao.model)
 
         print(f"Updated save '{name}'")
 

@@ -5,7 +5,7 @@ from typing import List, Dict
 from PIL import Image, ImageDraw, ImageFont
 from webcolors import hex_to_rgb
 
-from models import Player
+from modules.db import Player
 
 
 class ResourcesHandler:
