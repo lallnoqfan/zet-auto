@@ -7,41 +7,38 @@ from modules.db import GameData, GameDataDAO
 
 class ArgsParser:
 
-    def __init__(self) -> None:
+    @classmethod
+    def run(cls) -> None:
 
         parser = ArgumentParser()
         subparser = parser.add_subparsers(dest='command')
 
         read_all_parser = subparser.add_parser('all')
-        read_all_parser.set_defaults(func=self.read_all)
+        read_all_parser.set_defaults(func=cls.read_all)
 
         create_parser = subparser.add_parser('new')
         create_parser.add_argument('name', type=str,
                                    help='New save name')
-        create_parser.set_defaults(func=self.create)
+        create_parser.set_defaults(func=cls.create)
 
         delete_parser = subparser.add_parser('del')
         delete_parser.add_argument('name', type=str,
                                    help='Name of save to delete')
-        delete_parser.set_defaults(func=self.delete)
+        delete_parser.set_defaults(func=cls.delete)
 
         update_parser = subparser.add_parser('set')
         update_parser.add_argument('name', type=str,
                                    help='Name of save to update')
         update_parser.add_argument('-t', dest='thread', type=str,
                                    help='New thread url')
-        update_parser.set_defaults(func=self.update)
+        update_parser.set_defaults(func=cls.update)
 
         auto_parser = subparser.add_parser('run')
         auto_parser.add_argument('name', type=str,
                                  help='Name of save to run')
-        auto_parser.set_defaults(func=self.run)
+        auto_parser.set_defaults(func=cls.run_save)
 
         args = parser.parse_args()
-
-        if not args.command:
-            parser.print_help()
-            return
 
         args.func(args)
 
@@ -122,7 +119,7 @@ class ArgsParser:
         print(f"Updated save '{name}'")
 
     @staticmethod
-    def run(args: Namespace) -> None:
+    def run_save(args: Namespace) -> None:
 
         name = args.name
 
