@@ -577,6 +577,7 @@ class Controller:
                     filemode="a",
                     format="%(asctime)s %(levelname)s %(message)s")
 
+        f = True
         while True:
 
             try:
@@ -606,6 +607,10 @@ class Controller:
                 print("Connection error\n"
                       "Check your internet connection and try again")
 
+            except KeyboardInterrupt:
+                print("\nStopped by keyboard")
+                f = False
+
             except Exception as e:
 
                 print('\n' + '=' * 50)
@@ -620,4 +625,6 @@ class Controller:
                 log_error(e, exc_info=True)
 
             finally:
+                if not f:
+                    return
                 self.sleep()
