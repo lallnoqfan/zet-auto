@@ -26,3 +26,4 @@ class DvachConfig:
 
 class AppConfig:
     MAKE_PEREKATS = _getenv_bool("MAKE_PEREKATS", False)
+    READONLY = _getenv_bool("READONLY", False)

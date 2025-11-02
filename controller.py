@@ -9,7 +9,7 @@ from PIL import Image
 from requests import Response
 from requests.exceptions import ConnectionError
 
-from config import ConnectionConfig, Keys
+from config import ConnectionConfig, Keys, AppConfig
 from errors import ThreadNotSetException
 from modules import CommentParser, PasteHandler, PremodHandler, \
     ResourcesHandler, SavesHandler
@@ -384,6 +384,10 @@ class Controller:
 
     def _posting(self, schema: DvachPostingSchemaIn,
                  name: str) -> Response | None:
+
+        if not AppConfig.READONLY:
+            print("отмена постинга - сидим в ридонли")
+            return None
 
         c, result = 5, 0
         r = None
