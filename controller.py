@@ -9,6 +9,7 @@ from PIL import Image
 from requests import Response
 from requests.exceptions import ConnectionError
 
+from config import ConnectionConfig
 from errors import ThreadNotSetException
 from models import Usercode
 from modules import CommentParser, PasteHandler, PremodHandler, \
@@ -35,6 +36,8 @@ class Controller:
             passcode_data.usercode,
             passcode_data.usercode_auth,
             passcode_data.passcode_auth,
+            use_proxy=ConnectionConfig.USE_PROXY,
+            proxy=ConnectionConfig.PROXY,
         )
 
     def get_map_image(self) -> Image.Image:

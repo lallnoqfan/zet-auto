@@ -8,13 +8,20 @@ from .schemas import DvachPostingSchemaIn
 
 class DvachAPIHandler:
 
-    def __init__(self, usercode: str, usercode_auth: str, passcode_auth: str):
+    def __init__(self, usercode: str, usercode_auth: str, passcode_auth: str,
+                 use_proxy: bool = False, proxy: str = None):
 
         self.usercode = usercode
         self.cookies = {
             'usercode_auth': usercode_auth,
             'passcode_auth': passcode_auth,
         }
+
+        self.use_proxy = use_proxy
+        self.proxies = {
+            "http": proxy,
+            "https": proxy,
+        } if self.use_proxy else None
 
     def update_cookies(self, cookies: Dict[str, str]) -> None:
         self.cookies.update(cookies)
@@ -38,17 +45,18 @@ class DvachAPIHandler:
 
         return DvachThread(posts=posts)
 
-    @staticmethod
-    def get_thread_raw(board: str, thread_num: str | int) -> Response:
-
+    def get_thread_raw(self, board: str, thread_num: str | int) -> Response:
         url = f'https://2ch.hk/{board}/res/{thread_num}.json'
-        r = get(url)
+
+        if not self.use_proxy:
+            r = get(url)
+        else:
+            r = get(url, proxies=self.proxies)
 
         return r
 
     def post_posting(self, schema: DvachPostingSchemaIn,
                      headers: Dict = None, cookies: Dict = None) -> Response:
-
         url = 'https://2ch.hk/user/posting'
 
         schema.usercode = self.usercode
@@ -62,4 +70,9 @@ class DvachAPIHandler:
             cookies = dict()
         cookies.update(self.cookies)
 
-        return post(url, data=data, headers=headers, cookies=cookies)
+        if not self.use_proxy:
+            r = post(url, data=data, headers=headers, cookies=cookies)
+        else:
+            r = post(url, data=data, headers=headers, cookies=cookies, proxies=self.proxies)
+
+        return r
