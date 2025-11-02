@@ -109,7 +109,7 @@ class CommentParser:
     def parse_roll_on_neutral(comment: str) -> int | None:
         pattern = compile(
             r"(\n|^)>>(\d+?)\s*\n[^\n]*?(rol|рол)[^\n]*?"
-            r"(расширение|expan[ds])",
+            r"(расширение|покрас|expan[ds])",
             flags=IGNORECASE
         )
         r = search(pattern, comment)
