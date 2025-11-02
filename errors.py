@@ -1,7 +1,7 @@
 class ThreadNotSetException(Exception):
 
     def __init__(self, message=''):
-        self.message = 'Thread not set'
+        self.message = 'Тред не выбран'
         if message:
             self.message += ': ' + message
         super().__init__(self.message)

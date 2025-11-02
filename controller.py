@@ -397,9 +397,9 @@ class Controller:
                 self.sleep(5)
 
         if not result:
-            print(f"!!! {name} failed !!!")
+            print(f"!!! {name} - провалено !!!")
         else:
-            print(f"{name} succeeded")
+            print(f"{name} - ок")
 
         return r
 
@@ -411,7 +411,7 @@ class Controller:
             comment='Бамп',
         )
 
-        self._posting(schema, 'Bump')
+        self._posting(schema, 'Бамп')
 
     def posting_post(self) -> None:
 
@@ -428,7 +428,7 @@ class Controller:
             ],
         )
 
-        r = self._posting(schema, 'Post')
+        r = self._posting(schema, 'Постинг')
         if r:
             del self.paste_handler.paste
 
@@ -448,7 +448,7 @@ class Controller:
             files=files,
         )
 
-        r = self._posting(data, 'Thread creation')
+        r = self._posting(data, 'Создание треда')
 
         if not r:
             return
@@ -472,7 +472,7 @@ class Controller:
             comment=f"***{new_thread_link * 3}***",
         )
 
-        self._posting(schema, 'Announcement')
+        self._posting(schema, 'Анонс переката')
 
     def fetch_thread(self) -> DvachThread | None:
         return self.api.get_thread(self.dao.board, self.dao.thread)
@@ -510,7 +510,7 @@ class Controller:
 
         self.posting_announcement(old_thread)
 
-        # TODO: отправить оповещение о перекаке в брг
+        # TODO: отправить оповещение о перекаке в брг # fr?
 
         return True
 
@@ -522,7 +522,7 @@ class Controller:
 
         while passed < timeout:
             passed = perf_counter() - start_time
-            print(f"\rSleeping... {int(timeout - passed):>2}", end='')
+            print(f"\rСпим... {int(timeout - passed):>2}", end='')
             sleep(0.1)
         print()
 
@@ -533,33 +533,33 @@ class Controller:
 
         print(f"{f'  {datetime.now()}  ':=^80}")
 
-        print("Fetching thread...")
+        print("Получаем тред...")
         thread = self.fetch_thread()
 
         if not thread:
-            print("Thread not found, creating new one...")
+            print("Тред не найдем, создаём новый...")
             self.posting_thread()
             return
 
-        print("Parsing thread...")
+        print("Парсим тред...")
         self.parse_thread(thread)
 
         if self.paste_handler.paste:
-            print(f"{f'  paste  ':*^60}")
+            print(f"{f'  паста  ':*^60}")
             print(self.paste_handler.paste)
             print('*' * 60)
 
-            print("Posting map...")
+            print("Постим карту...")
             self.posting_post()
             return
 
-        print("== No new tiles to draw ==")
+        print("== Нет новых захватов для отрисовки ==")
 
-        print("Checking bump limit...")
+        print("Проверяем бамплимит...")
         if self.check_bump_limit():
             return
 
-        print("Checking drowning...")
+        print("Проверяем на затопленность...")
         if self.check_drowning():
             self.posting_bump()
             return
@@ -567,7 +567,7 @@ class Controller:
     def loop(self) -> None:
 
         print(f"\n{'':*^50}")
-        print(f"{' CTRL+C to stop loop ':*^50}")
+        print(f"{' CTRL+C для выхода из лупа ':*^50}")
         print(f"{'':*^50}\n")
 
         basicConfig(level=ERROR,
@@ -584,39 +584,39 @@ class Controller:
 
                 self.loop_iter()
 
-                print("Saving model...")
+                print("Сохраняем модель...")
                 self.dao.paste = self.paste_handler.paste
                 SavesHandler.dump(self.name, self.dao.model)
 
             except ThreadNotSetException as e:
                 print(e.message)
 
-                print(f"Want to create new one? board - {self.dao.board} (y/n)")
-                answer = input()
+                print(f"Хотите запилить новый? Доска - {self.dao.board} (да/нет)")
+                answer = input().lower()
 
-                if answer != 'y':
+                if answer not in {"да", "y"}:
                     break
 
                 if not self.dao.board:
-                    print("Enter board code: ")
+                    print("Введите код доски: ")
                     self.dao.board = input()
 
                 self.posting_thread()
 
             except ConnectionError:
-                print("Connection error\n"
-                      "Check your internet connection and try again")
+                print("Ошибка соеднинения\n"
+                      "Проверьте своё интернет соединение и попробуйте позже")
 
             except KeyboardInterrupt:
-                print("\nStopped by keyboard")
+                print("\nОстановлено клавиатурой")
                 f = False
 
             except Exception as e:
 
                 print('\n' + '=' * 50)
-                print(f"!!!{' UNHANDLED EXCEPTION OCCURRED ': ^44}!!!")
-                print(f"!!!{' KLOZET ZABILSYA ': ^44}!!!")
-                print(f"!!!{' POVTORYAU KLOZET ZABILSYA ': ^44}!!!")
+                print(f"!!!{' ПРОИЗОШЛА ЧУДОВИЩНАЯ ОШИБКА ': ^44}!!!")
+                print(f"!!!{' КЛОЗЕТ ЗАБИЛСЯ ': ^44}!!!")
+                print(f"!!!{' ПОВТОРЯЮ КЛОЗЕТ ЗАБИЛСЯ ': ^44}!!!")
                 print('=' * 50 + '\n')
 
                 print(e)
