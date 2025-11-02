@@ -2,6 +2,7 @@ from typing import Dict
 
 from requests import get, post, Response
 
+from config import DvachConfig
 from .models import DvachThread, Post
 from .schemas import DvachPostingSchemaIn
 
@@ -46,7 +47,7 @@ class DvachAPIHandler:
         return DvachThread(posts=posts)
 
     def get_thread_raw(self, board: str, thread_num: str | int) -> Response:
-        url = f'https://2ch.hk/{board}/res/{thread_num}.json'
+        url = f'{DvachConfig.BASE_URL}/{board}/res/{thread_num}.json'
 
         if not self.use_proxy:
             r = get(url)
@@ -57,7 +58,7 @@ class DvachAPIHandler:
 
     def post_posting(self, schema: DvachPostingSchemaIn,
                      headers: Dict = None, cookies: Dict = None) -> Response:
-        url = 'https://2ch.hk/user/posting'
+        url = f'{DvachConfig.BASE_URL}/user/posting'
 
         schema.usercode = self.usercode
         data = schema.to_data()

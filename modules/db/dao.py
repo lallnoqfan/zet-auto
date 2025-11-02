@@ -2,6 +2,7 @@ from typing import Dict, List, Optional
 
 from webcolors import hex_to_rgb
 
+from config import DvachConfig
 from .models import GameData, Player, RollBase
 
 
@@ -16,7 +17,7 @@ class GameDataDAO:
 
     @property
     def link(self) -> str:
-        return (f"https://2ch.hk/{self._model.board}"
+        return (f"{DvachConfig.BASE_URL}/{self._model.board}"
                 f"/res/{self._model.thread}.html")
 
     @link.setter

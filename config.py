@@ -18,3 +18,7 @@ class Keys:
     USERCODE = getenv('USERCODE', "")
     USERCODE_AUTH = getenv('USERCODE_AUTH', "")
     PASSCODE_AUTH = getenv('PASSCODE_AUTH', "")
+
+
+class DvachConfig:
+    BASE_URL = "https://2ch.life"
