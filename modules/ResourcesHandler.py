@@ -1,6 +1,7 @@
 from json import load
 from pathlib import Path
 from typing import List, Dict
+from uuid import uuid4
 
 from PIL import Image, ImageDraw, ImageFont
 from webcolors import hex_to_rgb
@@ -103,3 +104,12 @@ class ResourcesHandler:
             i += 50
 
         return img
+
+    @classmethod
+    def save_image(cls, image: Image.Image, name: str | None = None) -> None:
+        path = cls._path.parent / "saved images"
+        path.mkdir(parents=True, exist_ok=True)
+
+        if not name:
+            name = f"{uuid4()}"
+        image.save(path / f"{name}.png")

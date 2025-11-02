@@ -422,6 +422,12 @@ class Controller:
         map_image = self.get_map_image()
         players_image = self.get_players_image()
 
+        if AppConfig.SAVE_MAPS:
+            print("Сохраняем карту...")
+            name_prefix = f"{self.dao.board}_{self.dao.thread}_{self.dao.last_number}"
+            ResourcesHandler.save_image(map_image, name=f"{name_prefix}__map.png")
+            ResourcesHandler.save_image(players_image, name=f"{name_prefix}__players.png")
+
         schema = DvachPostingSchemaIn(
             board=self.dao.board,
             thread=self.dao.thread,
