@@ -12,3 +12,9 @@ def _getenv_bool(key: str, default_value: bool = False) -> bool:
 class ConnectionConfig:
     USE_PROXY = _getenv_bool("USE_PROXY")
     PROXY = getenv("PROXY", None) if USE_PROXY else None
+
+
+class Keys:
+    USERCODE = getenv('USERCODE', "")
+    USERCODE_AUTH = getenv('USERCODE_AUTH', "")
+    PASSCODE_AUTH = getenv('PASSCODE_AUTH', "")

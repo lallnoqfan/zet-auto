@@ -9,9 +9,8 @@ from PIL import Image
 from requests import Response
 from requests.exceptions import ConnectionError
 
-from config import ConnectionConfig
+from config import ConnectionConfig, Keys
 from errors import ThreadNotSetException
-from models import Usercode
 from modules import CommentParser, PasteHandler, PremodHandler, \
     ResourcesHandler, SavesHandler
 from modules.api import DvachAPIHandler, DvachThread, Post, \
@@ -30,12 +29,10 @@ class Controller:
         self.paste_handler = PasteHandler()
         self.paste_handler.paste = self.dao.paste
 
-        passcode_data = Usercode()
-
         self.api = DvachAPIHandler(
-            passcode_data.usercode,
-            passcode_data.usercode_auth,
-            passcode_data.passcode_auth,
+            usercode=Keys.USERCODE,
+            usercode_auth=Keys.USERCODE_AUTH,
+            passcode_auth=Keys.USERCODE_AUTH,
             use_proxy=ConnectionConfig.USE_PROXY,
             proxy=ConnectionConfig.PROXY,
         )
