@@ -503,6 +503,10 @@ class Controller:
         self.posting_post()
         self.sleep()
 
+        if not AppConfig.MAKE_PEREKATS:
+            print("отмена переката - конфиг сказал ноу")
+            return True
+
         old_thread = self.dao.thread
 
         self.posting_thread()

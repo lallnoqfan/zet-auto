@@ -22,3 +22,7 @@ class Keys:
 
 class DvachConfig:
     BASE_URL = "https://2ch.life"
+
+
+class AppConfig:
+    MAKE_PEREKATS = _getenv_bool("MAKE_PEREKATS", False)
