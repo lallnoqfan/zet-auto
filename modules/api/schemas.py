@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List
 
 from pydantic import BaseModel
 from requests_toolbelt import MultipartEncoder
@@ -30,19 +30,14 @@ class DvachPostingSchemaIn(BaseModel):
 
     files: List[ImageFile] = []
 
-    def to_dict(self) -> Dict:
-        data = self.dict()  # TODO: remove deprecated method usage
-        return data
-
     def to_data(self) -> MultipartEncoder:
-        data = self.to_dict()
-        del data['files']
+        data = self.model_dump(exclude={"files"})
 
-        for key in data:
-            if type(data[key]) is int:
-                data[key] = str(data[key])
+        for key, value in data.item():
+            if isinstance(value, int):
+                data.update({key: str(value)})
 
-        data = [(key, data[key]) for key in data]
+        data = list(data.items())
         if self.files:
             data += [file.to_field() for file in self.files]
 
