@@ -10,7 +10,7 @@ from requests import Response
 from requests.exceptions import ConnectionError
 
 from config import ConnectionConfig, Keys, AppConfig
-from errors import ThreadNotSetException
+from exceptions import ThreadNotSetException, ThreadNotFoundException
 from modules import CommentParser, PasteHandler, PremodHandler, \
     ResourcesHandler, SavesHandler
 from modules.api import DvachAPIHandler, DvachThread, Post, \
@@ -600,11 +600,10 @@ class Controller:
                     filemode="a",
                     format="%(asctime)s %(levelname)s %(message)s")
 
-        f = True
-        while True:
+        is_running = True
+        while is_running:
 
             try:
-
                 self.loop_iter()
 
                 print("Сохраняем модель...")
@@ -618,6 +617,8 @@ class Controller:
                 answer = input().lower()
 
                 if answer not in {"да", "y"}:
+                    print("Пон, отдыхаем")
+                    is_running = False
                     break
 
                 if not self.dao.board:
@@ -632,7 +633,11 @@ class Controller:
 
             except KeyboardInterrupt:
                 print("\nОстановлено клавиатурой")
-                f = False
+                is_running = False
+
+            except ThreadNotFoundException as e:
+                print(e.message)
+                is_running = False
 
             except Exception as e:
 
@@ -648,6 +653,6 @@ class Controller:
                 log_error(e, exc_info=True)
 
             finally:
-                if not f:
+                if not is_running:
                     return
                 self.sleep()
