@@ -4,12 +4,46 @@ from webcolors import hex_to_rgb
 
 from config import DvachConfig
 from .models import GameData, Player, RollBase
+from .. import SavesHandler
 
 
 class GameDataDAO:
 
     def __init__(self, game_data_model: GameData):
         self._model = game_data_model
+
+    @staticmethod
+    def load(model_name: str) -> "GameDataDAO":
+        return GameDataDAO(SavesHandler.load(model_name))
+
+    def __str__(self):
+        s = ""
+
+        s += f"Board: {self.board or 'Not set'}\n"
+        s += f"Thread: {self.thread or 'Not set'}\n"
+        s += f"Last post: {self.last_number or 'N/A'}\n"
+        s += "\n"
+
+        s += f"Cookies:\n"
+        for key, value in self.cookies.items():
+            s += " " * 4 + f"{key}: {value}\n"
+        s += "\n"
+
+        if not self.players:
+            s += "No players\n"
+            s += "\n"
+        else:
+            s += "Players:\n"
+            for player in self.players:
+                s += " " * 4 + f"Name: {player.name}\n"
+                s += " " * 8 + f"HEX: {player.color_hex}\n"
+                s += " " * 8 + f"RGB: {player.color_rgb}\n"
+                s += " " * 8 + f"Tiles: {len(player.tiles)}\n"
+                s += "\n"
+
+        s += f"Paste:\n{self.paste}\n"
+
+        return s
 
     @property
     def model(self) -> GameData:

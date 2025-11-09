@@ -46,7 +46,7 @@ class App:
         args.func(args)
 
     @staticmethod
-    def read_all(args: Namespace) -> None:
+    def read_all(_: Namespace) -> None:
 
         names = SavesHandler.get_list()
 
@@ -56,33 +56,8 @@ class App:
 
         print("=" * 60)
         for name in names:
-            model = SavesHandler.load(name)
-
             print(f"Name: {name}")
-            print(f"Board: {model.board or 'Not set'}")
-            print(f"Thread: {model.thread or 'Not set'}")
-            print(f"Last post: {model.last_number or 'N/A'}")
-            print()
-
-            print(f"Cookies:")
-            for key, value in model.cookies.items():
-                print(" " * 4 + f"{key}: {value}")
-            print()
-
-            if not model.players:
-                print("No players")
-                print()
-                continue
-
-            print("Players:")
-            for player in model.players:
-                print(" " * 4 + f"Name: {player.name}")
-                print(" " * 8 + f"HEX: {player.color_hex}")
-                print(" " * 8 + f"RGB: {player.color_rgb}")
-                print(" " * 8 + f"Tiles: {len(player.tiles)}")
-                print()
-
-            print(f"Paste:\n{model.paste}")
+            print(GameDataDAO.load(name))
             print("=" * 60)
 
     @staticmethod

@@ -19,11 +19,10 @@ from modules.db import GameDataDAO
 
 
 class Controller:
-
     def __init__(self, model_name: str) -> None:
-
         self.name = model_name
         self.dao = GameDataDAO(SavesHandler.load(model_name))
+        print(self.dao)
 
         self.premod_handler = PremodHandler()
         self.paste_handler = PasteHandler()
