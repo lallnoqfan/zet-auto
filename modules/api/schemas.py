@@ -33,7 +33,7 @@ class DvachPostingSchemaIn(BaseModel):
     def to_data(self) -> MultipartEncoder:
         data = self.model_dump(exclude={"files"})
 
-        for key, value in data.item():
+        for key, value in data.items():
             if isinstance(value, int):
                 data.update({key: str(value)})
 

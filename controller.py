@@ -32,7 +32,7 @@ class Controller:
         self.api = DvachAPIHandler(
             usercode=Keys.USERCODE,
             usercode_auth=Keys.USERCODE_AUTH,
-            passcode_auth=Keys.USERCODE_AUTH,
+            passcode_auth=Keys.PASSCODE_AUTH,
             use_proxy=ConnectionConfig.USE_PROXY,
             proxy=ConnectionConfig.PROXY,
         )
@@ -385,7 +385,7 @@ class Controller:
     def _posting(self, schema: DvachPostingSchemaIn,
                  name: str) -> Response | None:
 
-        if not AppConfig.READONLY:
+        if AppConfig.READONLY:
             print("отмена постинга - сидим в ридонли")
             return None
 
