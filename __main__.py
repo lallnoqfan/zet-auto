@@ -26,10 +26,10 @@ class App:
         delete_parser.set_defaults(func=self.delete)
 
         update_parser = subparser.add_parser('set')
-        update_parser.add_argument('name', type=str,
-                                   help='Name of save to update')
-        update_parser.add_argument('-t', dest='thread', type=str,
-                                   help='New thread url')
+        update_parser.add_argument('name', type=str, help='Name of save to update')
+        update_parser.add_argument('-b', dest='board', type=str, help='New board code')
+        update_parser.add_argument('-t', dest='thread', type=str, help='New thread number')
+        update_parser.add_argument('-l', dest='last_number', type=str, help='New last number')
         update_parser.set_defaults(func=self.update)
 
         auto_parser = subparser.add_parser('run')
@@ -54,12 +54,20 @@ class App:
             print("No saves found")
             return
 
+        print("=" * 60)
         for name in names:
             model = SavesHandler.load(name)
 
-            print(f"Name   - {name}")
-            print(f"Board  - {model.board or 'Not set'}")
-            print(f"Thread - {model.thread or 'Not set'}")
+            print(f"Name: {name}")
+            print(f"Board: {model.board or 'Not set'}")
+            print(f"Thread: {model.thread or 'Not set'}")
+            print(f"Last post: {model.last_number or 'N/A'}")
+            print()
+
+            print(f"Cookies:")
+            for key, value in model.cookies.items():
+                print(" " * 4 + f"{key}: {value}")
+            print()
 
             if not model.players:
                 print("No players")
@@ -68,12 +76,14 @@ class App:
 
             print("Players:")
             for player in model.players:
-                print(f"\tName - {player.name}")
-                print(f"\t\tHEX   - {player.color_hex}")
-                print(f"\t\tRGB   - {player.color_rgb}")
-                print(f"\t\tTiles - {len(player.tiles)}")
+                print(" " * 4 + f"Name: {player.name}")
+                print(" " * 8 + f"HEX: {player.color_hex}")
+                print(" " * 8 + f"RGB: {player.color_rgb}")
+                print(" " * 8 + f"Tiles: {len(player.tiles)}")
                 print()
-            print()
+
+            print(f"Paste:\n{model.paste}")
+            print("=" * 60)
 
     @staticmethod
     def create(args: Namespace) -> None:
@@ -112,11 +122,24 @@ class App:
 
         dao = GameDataDAO(SavesHandler.load(name))
 
-        if not args.thread:
+        state_changed = False
+
+        if args.board:
+            dao.board = args.board
+            state_changed = True
+
+        if args.thread:
+            dao.thread = args.thread
+            state_changed = True
+
+        if args.last_number:
+            dao.last_number = int(args.last_number)
+            state_changed = True
+
+        if not state_changed:
             print("No params specified")
             return
 
-        dao.link = args.thread  # todo: add validation
         SavesHandler.dump(name, dao.model)
 
         print(f"Updated save '{name}'")
