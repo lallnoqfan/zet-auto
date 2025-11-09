@@ -94,7 +94,7 @@ class ResourcesHandler:
             if player.tiles
         }
 
-        w, h = 960, 50 * len(players)
+        w, h = 960, max(50 * len(players), 10)
         img = Image.new('RGB', (w, h), (255, 255, 255))
 
         i = 0

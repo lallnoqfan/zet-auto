@@ -418,24 +418,33 @@ class Controller:
         self._posting(schema, 'Бамп')
 
     def posting_post(self) -> None:
+        draw_players = len(self.dao.players) > 0
 
         map_image = self.get_map_image()
-        players_image = self.get_players_image()
+        players_image = self.get_players_image() if draw_players else None
 
         if AppConfig.SAVE_MAPS:
             print("Сохраняем карту...")
             name_prefix = f"{self.dao.board}_{self.dao.thread}_{self.dao.last_number}"
             ResourcesHandler.save_image(map_image, name=f"{name_prefix}__map.png")
-            ResourcesHandler.save_image(players_image, name=f"{name_prefix}__players.png")
+            if draw_players:
+                ResourcesHandler.save_image(players_image, name=f"{name_prefix}__players.png")
+
+        if draw_players:
+            files = [
+                ImageFile(name='map.png', image=map_image),
+                ImageFile(name='players.png', image=players_image),
+            ]
+        else:
+            files = [
+                ImageFile(name='map.png', image=map_image),
+            ]
 
         schema = DvachPostingSchemaIn(
             board=self.dao.board,
             thread=self.dao.thread,
             comment=self.paste_handler.paste,
-            files=[
-                ImageFile(name='map.png', image=map_image),
-                ImageFile(name='players.png', image=players_image),
-            ],
+            files=files,
         )
 
         r = self._posting(schema, 'Постинг')
