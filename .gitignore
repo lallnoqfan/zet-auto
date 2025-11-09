@@ -9,6 +9,7 @@ venv
 
 ## Data files
 *saves/
+*saved images/
 */resources/black_list.txt
 */resources/white_list.txt
 */resources/ban_reasons.txt
