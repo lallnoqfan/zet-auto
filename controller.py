@@ -36,6 +36,8 @@ class Controller:
             proxy=ConnectionConfig.PROXY,
         )
 
+        self.api.update_cookies(self.dao.cookies)  # оп галка теперь не должна теряться (?)
+
     def get_map_image(self) -> Image.Image:
         return ResourcesHandler.draw_map(self.dao.players)
 
@@ -478,7 +480,7 @@ class Controller:
         cookies, d = r.cookies, dict()
         for cookie in cookies:
             if cookie.name[:2] == 'op':
-                d.update({cookie.name: cookie.value})  # noqa
+                d.update({cookie.name: cookie.value})
         self.api.update_cookies(d)
         self.dao.cookies.update(d)
 
