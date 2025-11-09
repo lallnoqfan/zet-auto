@@ -96,16 +96,17 @@ class PremodHandler:
             message=f'Запрос на создание игрока\n  Название: {player_name}',
             choices=[
                 Choice(value='add', name='Добавить'),
+                Choice(value='ignore', name='Игнорировать'),
                 Choice(value='ban', name='Забанить'),
             ],
             default='add',
         )
 
     @classmethod
-    def _select_reason(cls, player_name: str) -> ListPrompt:
+    def _select_reason(cls, player_name: str, is_ban: bool = False) -> ListPrompt:
         reasons = cls.get_ban_reasons()
         return select(
-            message=f'Причина бана "{player_name}":',
+            message=f'Причина {"бана" if is_ban else "игнора"} "{player_name}":',
             choices=[
                 *[
                     Choice(value=i, name=reasons[i])
@@ -119,9 +120,9 @@ class PremodHandler:
         )
 
     @staticmethod
-    def _input_reason(player_name: str) -> InputPrompt:
+    def _input_reason(player_name: str, is_ban: bool = False) -> InputPrompt:
         return text(
-            message=f'Причина бана "{player_name}":'
+            message=f'Причина {"бана" if is_ban else "игнора"} "{player_name}":'
         )
 
     def moderate(self, player_name: str) -> Tuple[bool, str | None]:
@@ -151,4 +152,14 @@ class PremodHandler:
                     reason = self._input_reason(player_name).execute()
 
                 self.add_to_black_list(player_name)
+                return False, reason
+            
+            case 'ignore':
+                print()
+                reason = self._select_reason(player_name).execute()
+
+                if reason == self._input_reason:
+                    print()
+                    reason = self._input_reason(player_name).execute()
+
                 return False, reason
