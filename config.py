@@ -21,7 +21,7 @@ class Keys:
 
 
 class DvachConfig:
-    BASE_URL = "https://2ch.life"
+    BASE_URL = "https://2ch.su"
 
 
 class AppConfig:
