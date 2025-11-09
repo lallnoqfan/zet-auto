@@ -111,5 +111,7 @@ class ResourcesHandler:
         path.mkdir(parents=True, exist_ok=True)
 
         if not name:
-            name = f"{uuid4()}"
-        image.save(path / f"{name}.png")
+            name = f"{uuid4()}.png"
+
+        with open(path / name, "wb") as f:
+            image.save(f)
