@@ -15,9 +15,9 @@ class ConnectionConfig:
 
 
 class Keys:
-    USERCODE = getenv('USERCODE', "")
-    USERCODE_AUTH = getenv('USERCODE_AUTH', "")
-    PASSCODE_AUTH = getenv('PASSCODE_AUTH', "")
+    USERCODE = getenv("USERCODE", "")
+    USERCODE_AUTH = getenv("USERCODE_AUTH", "")
+    PASSCODE_AUTH = getenv("PASSCODE_AUTH", "")
 
 
 class DvachConfig:

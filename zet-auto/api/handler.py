@@ -1,14 +1,13 @@
 from typing import Dict
 
-from requests import get, post, Response
+from requests import Response, get, post
 
 from config import DvachConfig
-from .models import DvachThread, Post
-from .schemas import DvachPostingSchemaIn
+from api.models import DvachThread, Post
+from api.schemas import DvachPostingSchemaIn
 
 
 class DvachAPIHandler:
-
     def __init__(self, usercode: str, usercode_auth: str, passcode_auth: str,
                  use_proxy: bool = False, proxy: str = None):
         self.usercode = usercode

@@ -10,7 +10,6 @@ from InquirerPy.separator import Separator
 
 
 class PremodHandler:
-
     _path: Path = Path(__file__).parent / 'resources'
 
     _white_list_path: Path = _path / 'white_list.txt'
@@ -121,29 +120,22 @@ class PremodHandler:
 
     @staticmethod
     def _input_reason(player_name: str, is_ban: bool = False) -> InputPrompt:
-        return text(
-            message=f'Причина {"бана" if is_ban else "игнора"} "{player_name}":'
-        )
+        return text(message=f'Причина {"бана" if is_ban else "игнора"} "{player_name}":')
 
     def moderate(self, player_name: str) -> Tuple[bool, str | None]:
-
-        # checking lists
-
         if self.in_black_list(player_name):
-            return False, 'in black list'
+            return False, "in black list"
         if self.in_white_list(player_name):
             return True, None
 
-        # user judgement
-
         print()
-        match self._select_action(player_name).execute():
 
-            case 'add':
+        match self._select_action(player_name).execute():
+            case "add":
                 self.add_to_white_list(player_name)
                 return True, None
 
-            case 'ban':
+            case "ban":
                 print()
                 reason = self._select_reason(player_name).execute()
 
@@ -154,7 +146,7 @@ class PremodHandler:
                 self.add_to_black_list(player_name)
                 return False, reason
             
-            case 'ignore':
+            case "ignore":
                 print()
                 reason = self._select_reason(player_name).execute()
 
@@ -163,3 +155,6 @@ class PremodHandler:
                     reason = self._input_reason(player_name).execute()
 
                 return False, reason
+
+            case _:
+                raise Exception("клозет забился...")

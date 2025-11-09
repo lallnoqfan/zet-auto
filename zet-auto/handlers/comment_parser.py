@@ -4,7 +4,6 @@ from typing import List, Tuple
 
 
 class CommentParser:
-
     @staticmethod
     def clear(comment: str) -> str:
         comment = sub(r'<br>', '\n', comment)
@@ -14,7 +13,6 @@ class CommentParser:
 
     @staticmethod
     def _cyrillic_to_roman(s: str) -> str:
-
         cyrillic = {
             'а': 'a',
             'б': 'b',
@@ -33,7 +31,6 @@ class CommentParser:
 
     @classmethod
     def parse_roll_base(cls, comment: str) -> Tuple[str, str] | None:
-
         pattern = compile(
             r"(рол{1,10}база|rol{1,10}base)\s*?\n(.+?)\s*?\n#?([a-fA-F0-9]{6})",
             flags=IGNORECASE,
@@ -42,7 +39,7 @@ class CommentParser:
         r = search(pattern, comment)
 
         if not r:
-            return
+            return None
 
         name = r.group(2)         # "(.+?)"
         color = f"#{r.group(3)}"  # "#?([a-fA-F0-9]{6})"
@@ -51,7 +48,6 @@ class CommentParser:
 
     @classmethod
     def parse_roll(cls, comment: str) -> Tuple[int, List[str]] | None:
-
         pattern = compile(
             r"(^|\n)>>(\d+?)\s*\n[^\n]*?(rol|рол)[^\n]*?((\d+[a-zа-я]* ?)+)",
             flags=IGNORECASE,
@@ -60,7 +56,7 @@ class CommentParser:
         r = search(pattern, comment)
 
         if not r:
-            return
+            return None
 
         num = r.group(2)    # >>(\d+?)
         tiles = r.group(4)  # ((\d+[a-zа-я]* ?)+)

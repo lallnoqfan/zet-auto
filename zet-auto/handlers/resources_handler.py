@@ -6,11 +6,10 @@ from uuid import uuid4
 from PIL import Image, ImageDraw, ImageFont
 from webcolors import hex_to_rgb
 
-from modules.db import Player
+from model.models import Player
 
 
 class ResourcesHandler:
-
     _path: Path = Path(__file__).parent / 'resources'
     _map: Image.Image = Image.open(_path / 'map.png').convert('RGB')
 
@@ -31,7 +30,6 @@ class ResourcesHandler:
 
     @classmethod
     def calc_distance(cls, first_tile_id: str,  second_tile_id: str) -> float:
-
         first_tile = cls.get_tile(first_tile_id)
         second_tile = cls.get_tile(second_tile_id)
 
@@ -39,12 +37,10 @@ class ResourcesHandler:
         x2, y2 = second_tile.get('x'), second_tile.get('y')
 
         distance = ((x1 - x2) ** 2 + (y1 - y2) ** 2) ** 0.5
-
         return distance
 
     @classmethod
     def draw_map(cls, players: List[Player]) -> Image.Image:
-
         map_image = cls._map.copy()
 
         for player in players:
@@ -87,7 +83,6 @@ class ResourcesHandler:
 
     @classmethod
     def draw_players(cls, players: List[Player]) -> Image.Image:
-
         players = {
             player.color_hex: player.name
             for player in players

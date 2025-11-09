@@ -6,7 +6,6 @@ from pydantic import BaseModel
 
 
 class ImageFile(BaseModel):
-
     class Config:
         arbitrary_types_allowed = True
 

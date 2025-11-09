@@ -3,12 +3,11 @@ from typing import Dict, List, Optional
 from webcolors import hex_to_rgb
 
 from config import DvachConfig
-from .models import GameData, Player, RollBase
-from .. import SavesHandler
+from handlers.saves_handler import SavesHandler
+from model.models import GameData, Player, RollBase
 
 
 class GameDataDAO:
-
     def __init__(self, game_data_model: GameData):
         self._model = game_data_model
 
@@ -51,13 +50,12 @@ class GameDataDAO:
 
     @property
     def link(self) -> str:
-        return (f"{DvachConfig.BASE_URL}/{self._model.board}"
-                f"/res/{self._model.thread}.html")
+        return f"{DvachConfig.BASE_URL}/{self._model.board}/res/{self._model.thread}.html"
 
     @link.setter
     def link(self, new_val: str) -> None:
-        self._model.thread = new_val.split('/')[-1].split('.')[0]
-        self._model.board = new_val.split('/')[-3]
+        self._model.thread = new_val.split("/")[-1].split(".")[0]
+        self._model.board = new_val.split("/")[-3]
         self._model.last_number = 1
 
     @property
@@ -108,17 +106,15 @@ class GameDataDAO:
     ) -> Player | None:
 
         if not name and not color and rb_num is None:
-            return
+            return None
 
         if rb_num:
             player = next((
                 rb.player
                 for rb in self._model.roll_bases
-                if (
-                    (rb.post_num == rb_num) and
-                    (not name or rb.player.name == name) and
-                    (not color or rb.player.color_hex == color)
-                )
+                if (rb.post_num == rb_num)
+                and (not name or rb.player.name == name)
+                and (not color or rb.player.color_hex == color)
             ), None)
 
             if player:
@@ -127,10 +123,8 @@ class GameDataDAO:
         return next((
             player
             for player in self._model.players
-            if (
-                (not name or player.name == name) and
-                (not color or player.color_hex == color)
-            )
+            if (not name or player.name == name)
+            and (not color or player.color_hex == color)
         ), None)
 
     def check_player(
@@ -164,18 +158,15 @@ class GameDataDAO:
         return False
 
     def add_player(self, name: str, color: str) -> Player | None:
-
         if self.check_player(name=name, color=color):
-            return
+            return None
 
         player = Player(
             name=name,
             color_hex=color,
             color_rgb=hex_to_rgb(color),
         )
-
         self._model.players.append(player)
-
         return player
 
     def del_empty_players(self) -> None:
@@ -202,33 +193,26 @@ class GameDataDAO:
             if rb.post_num == post_num
         ), None)
 
-    def add_roll_base(
-            self, player: Player, post_num: int
-    ) -> RollBase | None:
-
+    def add_roll_base(self, player: Player, post_num: int) -> RollBase | None:
         if self.get_roll_base(post_num):
-            return
+            return None
 
-        roll_base = RollBase(
-            player=player,
-            post_num=post_num,
-        )
-
+        roll_base = RollBase(player=player, post_num=post_num,)
         self._model.roll_bases.append(roll_base)
-
         return roll_base
 
     def del_tile(self, tile_id: str) -> str | None:
-
         player = next((
             player
             for player in self._model.players
             if tile_id in player.tiles
         ), None)
 
-        if player:
-            player.tiles.remove(tile_id)
-            return player.name
+        if not player:
+            return None
+
+        player.tiles.remove(tile_id)
+        return player.name
 
     def is_tile_free(self, tile_id: str) -> bool:
         for player in self._model.players:

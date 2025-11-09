@@ -16,10 +16,10 @@ class RollBase(BaseModel):
 
 
 class GameData(BaseModel):
-    board:       str = 'b'
-    thread:      str = ''
+    board:       str = "b"
+    thread:      str = ""
     last_number: int = 1
-    paste:       str = ''
+    paste:       str = ""
 
     players:     List[Player] = []
     roll_bases:  List[RollBase] = []

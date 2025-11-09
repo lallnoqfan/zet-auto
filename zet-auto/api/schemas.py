@@ -3,32 +3,32 @@ from typing import List
 from pydantic import BaseModel
 from requests_toolbelt import MultipartEncoder
 
-from .models import ImageFile
+from api.models import ImageFile
 
 
 class DvachPostingSchemaIn(BaseModel):
     board:   str
-    thread:  str | int = ''
-    comment: str = ''
+    thread:  str | int = ""
+    comment: str = ""
 
-    op_mark: str | int = '1'
-    subject: str = ''
-    name:    str = ''
-    email:   str = ''
-    tags:    str = ''
+    op_mark: str | int = "1"
+    subject: str = ""
+    name:    str = ""
+    email:   str = ""
+    tags:    str = ""
 
-    oekaki_image:    str = ''
-    oekaki_metadata: str = ''
-    makaka_id:       str = ''
-    makaka_answer:   str = ''
+    oekaki_image:    str = ""
+    oekaki_metadata: str = ""
+    makaka_id:       str = ""
+    makaka_answer:   str = ""
 
-    task:         str = 'post'
-    submit:       str = 'Ответ'
-    captcha_type: str = 'emoji_captcha'
+    task:         str = "post"
+    submit:       str = "Ответ"
+    captcha_type: str = "emoji_captcha"
     emoji_captcha_id: str = ""
 
-    usercode:     str = ''
-    code:         str = ''
+    usercode:     str = ""
+    code:         str = ""
 
     sticker0: str = ""
     # icon: str | int = "-1"

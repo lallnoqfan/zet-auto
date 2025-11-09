@@ -2,11 +2,10 @@ from pathlib import Path
 from pickle import dump, load
 from typing import List
 
-from modules.db import GameData
+from model.models import GameData
 
 
 class SavesHandler:
-
     _extension: str = '.zet'
     _path: Path = Path(__file__).parent / 'saves'
 

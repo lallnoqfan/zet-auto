@@ -8,11 +8,12 @@ venv
 *.env
 
 ## Data files
-*saves/
-*saved images/
-*/resources/black_list.txt
-*/resources/white_list.txt
-*/resources/ban_reasons.txt
+/saves/
+/saved images/
+/resources/black_list.txt
+/resources/white_list.txt
+/resources/ban_reasons.txt
 
 ## Logging
 *.log
+/logs/

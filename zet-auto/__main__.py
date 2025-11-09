@@ -1,40 +1,36 @@
 from argparse import ArgumentParser, Namespace
 
-from modules import SavesHandler
 from controller import Controller
-from modules.db import GameData, GameDataDAO
+from handlers.saves_handler import SavesHandler
+from model.dao import GameDataDAO
+from model.models import GameData
 
 
 class App:
-
     def __init__(self) -> None:
-
         parser = ArgumentParser()
-        subparser = parser.add_subparsers(dest='command')
+        subparser = parser.add_subparsers(dest="command")
 
-        read_all_parser = subparser.add_parser('all')
+        read_all_parser = subparser.add_parser("all")
         read_all_parser.set_defaults(func=self.read_all)
 
-        create_parser = subparser.add_parser('new')
-        create_parser.add_argument('name', type=str,
-                                   help='New save name')
+        create_parser = subparser.add_parser("new")
+        create_parser.add_argument("name", type=str, help="New save name")
         create_parser.set_defaults(func=self.create)
 
-        delete_parser = subparser.add_parser('del')
-        delete_parser.add_argument('name', type=str,
-                                   help='Name of save to delete')
+        delete_parser = subparser.add_parser("del")
+        delete_parser.add_argument("name", type=str, help="Name of save to delete")
         delete_parser.set_defaults(func=self.delete)
 
-        update_parser = subparser.add_parser('set')
-        update_parser.add_argument('name', type=str, help='Name of save to update')
-        update_parser.add_argument('-b', dest='board', type=str, help='New board code')
-        update_parser.add_argument('-t', dest='thread', type=str, help='New thread number')
-        update_parser.add_argument('-l', dest='last_number', type=str, help='New last number')
+        update_parser = subparser.add_parser("set")
+        update_parser.add_argument("name", type=str, help="Name of save to update")
+        update_parser.add_argument("-b", dest="board", type=str, help="New board code")
+        update_parser.add_argument("-t", dest="thread", type=str, help="New thread number")
+        update_parser.add_argument("-l", dest="last_number", type=str, help="New last number")
         update_parser.set_defaults(func=self.update)
 
-        auto_parser = subparser.add_parser('run')
-        auto_parser.add_argument('name', type=str,
-                                 help='Name of save to run')
+        auto_parser = subparser.add_parser("run")
+        auto_parser.add_argument("name", type=str, help="Name of save to run")
         auto_parser.set_defaults(func=self.run)
 
         args = parser.parse_args()
@@ -47,7 +43,6 @@ class App:
 
     @staticmethod
     def read_all(_: Namespace) -> None:
-
         names = SavesHandler.get_list()
 
         if len(names) == 0:
@@ -62,7 +57,6 @@ class App:
 
     @staticmethod
     def create(args: Namespace) -> None:
-
         name = args.name
 
         if SavesHandler.exists(name):
@@ -70,12 +64,10 @@ class App:
             return
 
         SavesHandler.dump(args.name, GameData())
-
         print(f"Created new save '{name}'")
 
     @staticmethod
     def delete(args: Namespace) -> None:
-
         name = args.name
 
         if not SavesHandler.exists(name):
@@ -83,12 +75,10 @@ class App:
             return
 
         SavesHandler.delete(name)
-
         print(f"Deleted save '{name}'")
 
     @staticmethod
     def update(args: Namespace) -> None:
-
         name = args.name
 
         if not SavesHandler.exists(name):
@@ -116,21 +106,20 @@ class App:
             return
 
         SavesHandler.dump(name, dao.model)
-
         print(f"Updated save '{name}'")
 
     @staticmethod
     def run(args: Namespace) -> None:
-
         name = args.name
 
         if not SavesHandler.exists(name):
             print(f"Save '{name}' does not exist")
+            return
 
         Controller(name).loop()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         App()
     except KeyboardInterrupt:

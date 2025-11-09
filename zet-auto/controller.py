@@ -9,13 +9,17 @@ from PIL import Image
 from requests import Response
 from requests.exceptions import ConnectionError
 
+from api.models import Post, DvachThread, ImageFile
+from api.schemas import DvachPostingSchemaIn
+from api.handler import DvachAPIHandler
 from config import ConnectionConfig, Keys, AppConfig
 from exceptions import ThreadNotSetException, ThreadNotFoundException
-from modules import CommentParser, PasteHandler, PremodHandler, \
-    ResourcesHandler, SavesHandler
-from modules.api import DvachAPIHandler, DvachThread, Post, \
-    DvachPostingSchemaIn, ImageFile
-from modules.db import GameDataDAO
+from handlers.comment_parser import CommentParser
+from handlers.paste_handler import PasteHandler
+from handlers.premod_handler import PremodHandler
+from handlers.resources_handler import ResourcesHandler
+from handlers.saves_handler import SavesHandler
+from model.dao import GameDataDAO
 
 
 class Controller:
@@ -45,17 +49,15 @@ class Controller:
         return ResourcesHandler.draw_players(self.dao.players)
 
     def _pre_addition(self, roll_base_number: int, roll_number: int) -> bool:
-
         roll_base = self.dao.get_roll_base(roll_base_number)
+
         if not roll_base:
             self.paste_handler.invalid_roll_base(roll_number, roll_base_number)
             return False
 
         return True
 
-    def add_tiles(self, roll_base_number: int, roll_number: int,
-                  tiles: List[str], roll_value: int) -> int:
-
+    def add_tiles(self, roll_base_number: int, roll_number: int, tiles: List[str], roll_value: int) -> int:
         if not self._pre_addition(roll_base_number, roll_number):
             return roll_value
 
@@ -75,19 +77,15 @@ class Controller:
                 self.paste_handler.already_owns(roll_number, tile)
 
         while roll_value > 0 and tiles:
-
             # if player has no tiles
             if not player.tiles:
                 for tile in tiles:
-
                     attacked = self.dao.del_tile(tile)
 
                     if not attacked:
                         self.paste_handler.creation(roll_number, tile, player.name)
                     else:
-                        self.paste_handler.creation_attack(
-                            roll_number, tile, player.name, attacked
-                        )
+                        self.paste_handler.creation_attack(roll_number, tile, player.name, attacked)
 
                     player.tiles.append(tile)
                     tiles.remove(tile)
@@ -105,21 +103,18 @@ class Controller:
                         continue
 
                     _f = True
-
                     attacked = self.dao.del_tile(tile)
 
                     if not attacked:
                         self.paste_handler.capture(roll_number, tile, player.name)
                     else:
-                        self.paste_handler.capture_attack(
-                            roll_number, tile, player.name, attacked
-                        )
+                        self.paste_handler.capture_attack(roll_number, tile, player.name, attacked)
 
                     player.tiles.append(tile)
                     tiles.remove(tile)
                     roll_value -= 1
-
                     break
+
                 if _f:
                     break
             if _f:
@@ -133,9 +128,7 @@ class Controller:
 
         return roll_value
 
-    def add_tiles_neutral(self, roll_base_number: int, roll_number: int,
-                          roll_value: int) -> int:
-
+    def add_tiles_neutral(self, roll_base_number: int, roll_number: int, roll_value: int) -> int:
         if not self._pre_addition(roll_base_number, roll_number):
             return roll_value
 
@@ -150,13 +143,11 @@ class Controller:
         while roll_value > 0:
             # getting nearby tiles
             for tile in player.tiles:
-
                 if tile in checked_tiles:
                     continue
                 checked_tiles.append(tile)
 
                 for routed in ResourcesHandler.get_tile(tile).get('routes'):
-
                     if not self.dao.is_tile_free(routed):
                         continue
 
@@ -182,9 +173,7 @@ class Controller:
 
         return roll_value
 
-    def add_tiles_against(self, roll_base_number: int, roll_number: int,
-                          roll_value: int, attacked_name: str) -> int:
-
+    def add_tiles_against(self, roll_base_number: int, roll_number: int, roll_value: int, attacked_name: str) -> int:
         if not self._pre_addition(roll_base_number, roll_number):
             return roll_value
 
@@ -195,9 +184,7 @@ class Controller:
             return roll_value
 
         # try to find the closest match in players' names
-        match = get_close_matches(
-            attacked_name, [player.name for player in self.dao.players], 1
-        )
+        match = get_close_matches(attacked_name, [player.name for player in self.dao.players], 1)
         if not match:
             self.paste_handler.against_no_matches(roll_number)
             return roll_value
@@ -213,13 +200,11 @@ class Controller:
 
         while roll_value > 0:
             for tile in attacking.tiles:
-
                 if tile in checked_tiles:
                     continue
                 checked_tiles.append(tile)
 
                 for routed in ResourcesHandler.get_tile(tile).get('routes'):
-
                     if routed not in attacked.tiles:
                         continue
 
@@ -238,8 +223,7 @@ class Controller:
             attacked.tiles.remove(nearest)
             roll_value -= 1
             tiles.__delitem__(nearest)
-            self.paste_handler.capture_attack(roll_number, nearest,
-                                              attacking.name, attacked.name)
+            self.paste_handler.capture_attack(roll_number, nearest, attacking.name, attacked.name)
 
         if roll_value > 0:
             self.paste_handler.against_no_routes(roll_number, attacked.name)
@@ -247,7 +231,6 @@ class Controller:
         return roll_value
 
     def parse_roll_base(self, post: Post) -> bool:
-
         data = CommentParser.parse_roll_base(post.comment)
 
         if not data:
@@ -301,45 +284,35 @@ class Controller:
         return True
 
     def parse_roll(self, post: Post, roll_value: int) -> int:
-
         data = CommentParser.parse_roll(post.comment)
 
         if not data:
             return roll_value
 
         roll_base_number, tiles = data
-
         roll_value = self.add_tiles(roll_base_number, post.num, tiles, roll_value)
-
         return roll_value
 
     def parse_roll_neutral(self, post: Post, roll_value: int) -> int:
-
         rb_num = CommentParser.parse_roll_on_neutral(post.comment)
+
         if not rb_num:
             return roll_value
 
         roll_value = self.add_tiles_neutral(rb_num, post.num, roll_value)
-
         return roll_value
 
     def parse_roll_against(self, post: Post, roll_value: int) -> int:
-
         data = CommentParser.parse_roll_against(post.comment)
 
         if not data:
             return roll_value
 
         rb_num, attacked_name = data
-
-        roll_value = self.add_tiles_against(
-            rb_num, post.num, roll_value, attacked_name
-        )
-
+        roll_value = self.add_tiles_against(rb_num, post.num, roll_value, attacked_name)
         return roll_value
 
     def parse_post(self, post: Post) -> None:
-
         post.comment = CommentParser.clear(post.comment)
 
         if self.parse_roll_base(post):
@@ -371,9 +344,7 @@ class Controller:
         self.paste_handler.add_line()
 
     def parse_thread(self, thread: DvachThread) -> None:
-
         for post in thread.posts:
-
             if post.number <= self.dao.last_number:
                 continue
 
@@ -383,9 +354,7 @@ class Controller:
             self.parse_post(post)
             self.dao.last_number = post.number
 
-    def _posting(self, schema: DvachPostingSchemaIn,
-                 name: str) -> Response | None:
-
+    def _posting(self, schema: DvachPostingSchemaIn, name: str) -> Response | None:
         if AppConfig.READONLY:
             print("отмена постинга - сидим в ридонли")
             return None
@@ -409,13 +378,11 @@ class Controller:
         return r
 
     def posting_bump(self) -> None:
-
         schema = DvachPostingSchemaIn(
             board=self.dao.board,
             thread=self.dao.thread,
             comment='Бамп',
         )
-
         self._posting(schema, 'Бамп')
 
     def posting_post(self) -> None:
@@ -453,14 +420,12 @@ class Controller:
             del self.paste_handler.paste
 
     def posting_thread(self) -> None:
-
         del self.dao.empty_players
         del self.dao.roll_bases
 
         files = [ImageFile(name='map.png', image=self.get_map_image())]
         if self.dao.players:
-            files.append(ImageFile(name='players.png',
-                                   image=self.get_players_image()))
+            files.append(ImageFile(name='players.png', image=self.get_players_image()))
 
         data = DvachPostingSchemaIn(
             board=self.dao.board,
@@ -485,39 +450,33 @@ class Controller:
         self.dao.cookies.update(d)
 
     def posting_announcement(self, thread_num: str | int) -> None:
-
         new_thread_link = self.dao.link
-
         schema = DvachPostingSchemaIn(
             board=self.dao.board,
             thread=thread_num,
             comment=f"***{new_thread_link * 3}***",
         )
-
         self._posting(schema, 'Анонс переката')
 
     def fetch_thread(self) -> DvachThread | None:
         return self.api.get_thread(self.dao.board, self.dao.thread)
 
     def check_drowning(self) -> bool:
-
         thread = self.fetch_thread()
 
         for post in thread.posts[::-1]:
-
             if post.sage:
                 continue
 
             post_time = post.datetime.split()
             post_time = post_time[0] + ' ' + post_time[2]
             post_time = datetime.strptime(post_time, "%d/%m/%y %H:%M:%S")
-
             delta = datetime.now() - post_time
-
             return delta.seconds >= 60  # hardcoded bumps timeout
 
-    def check_bump_limit(self) -> bool:
+        return False
 
+    def check_bump_limit(self) -> bool:
         if not self.dao.last_number >= 500:  # hardcoded bump limit
             return False
 
@@ -535,14 +494,12 @@ class Controller:
         self.sleep()
 
         self.posting_announcement(old_thread)
-
         # TODO: отправить оповещение о перекаке в брг # fr?
 
         return True
 
     @staticmethod
-    def sleep(timeout: int = 15) -> None:
-
+    def sleep(timeout: int = 10) -> None:
         start_time = perf_counter()
         passed = perf_counter() - start_time
 
@@ -550,10 +507,10 @@ class Controller:
             passed = perf_counter() - start_time
             print(f"\rСпим... {int(timeout - passed):>2}", end='')
             sleep(0.1)
+
         print()
 
     def loop_iter(self) -> None:
-
         if not self.dao.board or not self.dao.thread:
             raise ThreadNotSetException
 
@@ -591,31 +548,28 @@ class Controller:
             return
 
     def loop(self) -> None:
-
         print(f"\n{'':*^50}")
         print(f"{' CTRL+C для выхода из лупа ':*^50}")
         print(f"{'':*^50}\n")
 
-        basicConfig(level=ERROR,
-                    filename=str(__file__).replace(
-                        'controller.py', 'errors.log'
-                    ),
-                    filemode="a",
-                    format="%(asctime)s %(levelname)s %(message)s")
+        basicConfig(
+            level=ERROR,
+            filename=str(__file__).replace("controller.py", "errors.log"),
+            filemode="a",
+            format="%(asctime)s %(levelname)s %(message)s",
+        )
 
         is_running = True
-        while is_running:
 
+        while is_running:
             try:
                 self.loop_iter()
-
                 print("Сохраняем модель...")
                 self.dao.paste = self.paste_handler.paste
                 SavesHandler.dump(self.name, self.dao.model)
 
             except ThreadNotSetException as e:
                 print(e.message)
-
                 print(f"Хотите запилить новый? Доска - {self.dao.board} (да/нет)")
                 answer = input().lower()
 
@@ -643,7 +597,6 @@ class Controller:
                 is_running = False
 
             except Exception as e:
-
                 print('\n' + '=' * 50)
                 print(f"!!!{' ПРОИЗОШЛА ЧУДОВИЩНАЯ ОШИБКА ': ^44}!!!")
                 print(f"!!!{' КЛОЗЕТ ЗАБИЛСЯ ': ^44}!!!")
