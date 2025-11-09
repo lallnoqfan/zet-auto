@@ -560,9 +560,9 @@ class Controller:
         thread = self.fetch_thread()
 
         if not thread:
-            print("Тред не найдем, создаём новый...")
-            self.posting_thread()
-            return
+            print("Тред не найден, отвал руля...")
+            # self.posting_thread()
+            raise ThreadNotFoundException
 
         print("Парсим тред...")
         self.parse_thread(thread)
