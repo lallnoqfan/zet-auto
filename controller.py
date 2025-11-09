@@ -472,6 +472,8 @@ class Controller:
             return
 
         self.dao.thread = r.json().get('thread')
+        self.dao.last_number = 1
+        # TODO: использовать номер поста на доске вместо номера в треде (на чистки удаления половины треда ув. чмодами)
 
         cookies, d = r.cookies, dict()
         for cookie in cookies:
