@@ -24,9 +24,14 @@ class DvachPostingSchemaIn(BaseModel):
 
     task:         str = 'post'
     submit:       str = 'Ответ'
-    captcha_type: str = '2chcaptcha'
+    captcha_type: str = 'emoji_captcha'
+    emoji_captcha_id: str = ""
+
     usercode:     str = ''
     code:         str = ''
+
+    sticker0: str = ""
+    # icon: str | int = "-1"
 
     files: List[ImageFile] = []
 
